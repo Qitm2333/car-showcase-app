@@ -4,18 +4,17 @@ interface UserContextType {
   inviteCode: string;
   setInviteCode: (code: string) => void;
   userName: string;
+  setUserName: (name: string) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [inviteCode, setInviteCode] = useState<string>('');
-  
-  // 用户名默认为邀请码，如果没有邀请码则显示'Young'
-  const userName = inviteCode || 'Young';
+  const [userName, setUserName] = useState<string>('Young');
 
   return (
-    <UserContext.Provider value={{ inviteCode, setInviteCode, userName }}>
+    <UserContext.Provider value={{ inviteCode, setInviteCode, userName, setUserName }}>
       {children}
     </UserContext.Provider>
   );

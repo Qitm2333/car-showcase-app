@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import svgPaths from "../imports/login/svg-umkjzh2tjw";
 import { useUser } from "@/contexts/UserContext";
+import { API_ENDPOINTS } from "@/config/api";
 
 function LeftBackground() {
   return (
@@ -79,34 +80,50 @@ function Logo() {
 
 export default function Login() {
   const navigate = useNavigate();
-  const { setInviteCode } = useUser();
+  const { setInviteCode, setUserName } = useUser();
   const [inviteCode, setLocalInviteCode] = React.useState("");
   const [error, setError] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
 
-  // 允许的邀请码列表
-  const validInviteCodes = [
-    "DQ666",
-    "PQ666",
-    "A3B79",
-    "C8D2F",
-    "E5G1H",
-    "J9K6L",
-    "M2N4P",
-    "Q7R3T",
-    "V1W8X",
-    "Y6Z9B"
-  ];
+  const handleLogin = async () => {
+    if (!inviteCode.trim()) {
+      setError("请输入邀请码");
+      return;
+    }
 
-  const handleLogin = () => {
-    // 验证邀请码
-    if (validInviteCodes.includes(inviteCode)) {
-      // 设置全局邀请码状态
-      setInviteCode(inviteCode);
-      // 邀请码正确，跳转到灵感搜集主界面
-      navigate("/car-showcase");
-    } else {
-      // 邀请码错误，显示提示
-      setError("邀请码不正确");
+    setLoading(true);
+    setError("");
+
+    try {
+      // 调用N8N登录API
+      const response = await fetch(API_ENDPOINTS.LOGIN, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inviteCode: inviteCode.trim()
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // 登录成功
+        setInviteCode(data.data.inviteCode);
+        setUserName(data.data.userName);
+        
+        // 跳转到车型展示页面
+        navigate("/car-showcase");
+      } else {
+        // 登录失败
+        setError(data.message || "邀请码无效");
+      }
+    } catch (error) {
+      console.error('登录错误:', error);
+      setError("网络错误，请检查连接后重试");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -172,9 +189,9 @@ export default function Login() {
                 onClick={handleLogin}
                 className="w-full bg-[#6062ef] text-white rounded-[20px] py-[10px] px-[140px] font-['Inter:Regular',_'Noto_Sans_JP:Regular',_'Noto_Sans_SC:Regular',_sans-serif] font-normal hover:bg-[#5052df] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
                 style={{ fontSize: '20px', lineHeight: 'normal' }}
-                disabled={!inviteCode}
+                disabled={!inviteCode || loading}
               >
-                进入
+                {loading ? "验证中..." : "进入"}
               </button>
             </div>
           </div>

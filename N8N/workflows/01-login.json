@@ -1,0 +1,316 @@
+{
+  "name": "🔐 用户登录验证",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "api/login",
+        "options": {
+          "responseMode": "onReceived"
+        },
+        "httpMethod": "POST"
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        300
+      ],
+      "id": "webhook-login",
+      "name": "Webhook - 接收登录请求",
+      "webhookId": "c29dd183-8c5a-485b-b667-18afd2f17ee8"
+    },
+    {
+      "parameters": {
+        "url": "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        300
+      ],
+      "id": "get-user-data",
+      "name": "获取用户数据（Google Sheet）"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 解析CSV数据\nconst csvData = $input.first().json.data;\nconst lines = csvData.split('\\n');\nconst headers = lines[0].split(',');\n\n// 转换为JSON数组\nconst users = [];\nfor (let i = 1; i < lines.length; i++) {\n  if (lines[i].trim()) {\n    const values = lines[i].split(',');\n    const user = {};\n    headers.forEach((header, index) => {\n      user[header.trim()] = values[index]?.trim();\n    });\n    users.push(user);\n  }\n}\n\nreturn users.map(user => ({ json: user }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ],
+      "id": "parse-csv",
+      "name": "解析CSV数据"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.inviteCode }}",
+              "rightValue": "={{ $('Webhook - 接收登录请求').item.json.body.inviteCode }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "active",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combineOperation": "all"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ],
+      "id": "filter-user",
+      "name": "验证邀请码"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 登录成功 - 更新最后登录时间\nconst user = $input.first().json;\nconst now = new Date().toISOString().split('T')[0];\n\nreturn [{\n  json: {\n    success: true,\n    message: '登录成功',\n    data: {\n      inviteCode: user.inviteCode,\n      userName: user.userName,\n      email: user.email,\n      lastLoginAt: now\n    },\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        200
+      ],
+      "id": "login-success",
+      "name": "✅ 登录成功"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1340,
+        200
+      ],
+      "id": "respond-success",
+      "name": "返回成功响应"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 登录失败\nconst requestData = $('Webhook - 接收登录请求').first().json.body;\n\nreturn [{\n  json: {\n    success: false,\n    message: '邀请码无效或账户已被禁用',\n    data: {\n      inviteCode: requestData.inviteCode\n    },\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        400
+      ],
+      "id": "login-failed",
+      "name": "❌ 登录失败"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 401,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1340,
+        400
+      ],
+      "id": "respond-failed",
+      "name": "返回失败响应"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 处理错误情况（无数据）\nreturn [{\n  json: {\n    success: false,\n    message: '系统错误：无法获取用户数据',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        500
+      ],
+      "id": "error-handler",
+      "name": "⚠️ 错误处理"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 500,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        500
+      ],
+      "id": "respond-error",
+      "name": "返回错误响应"
+    }
+  ],
+  "connections": {
+    "Webhook - 接收登录请求": {
+      "main": [
+        [
+          {
+            "node": "获取用户数据（Google Sheet）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取用户数据（Google Sheet）": {
+      "main": [
+        [
+          {
+            "node": "解析CSV数据",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解析CSV数据": {
+      "main": [
+        [
+          {
+            "node": "验证邀请码",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "⚠️ 错误处理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "验证邀请码": {
+      "main": [
+        [
+          {
+            "node": "✅ 登录成功",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "❌ 登录失败",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✅ 登录成功": {
+      "main": [
+        [
+          {
+            "node": "返回成功响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "❌ 登录失败": {
+      "main": [
+        [
+          {
+            "node": "返回失败响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚠️ 错误处理": {
+      "main": [
+        [
+          {
+            "node": "返回错误响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-28T00:00:00.000Z",
+  "versionId": "1"
+}
+

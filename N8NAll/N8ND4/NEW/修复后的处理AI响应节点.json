@@ -1,0 +1,14 @@
+{
+  "parameters": {
+    "jsCode": "const data = $input.item.json;\nconst aiResponse = data.output || '';\n\nconst conversationHistory = data.conversationHistory || '';\nconst updatedHistory = conversationHistory + 'AISpeak:' + aiResponse + '----';\n\nconst messageID = 'msg_' + Date.now();\n\n// ⭐ 将tags字符串转换为数组\nconst tagsArray = data.tags ? data.tags.split(',').filter(t => t.trim()) : [];\n\nreturn {\n  json: {\n    dialogueID: data.dialogueID,\n    userID: data.userID,\n    title: data.title,\n    tags: data.tags,\n    createTime: data.createTime,\n    status: data.status,\n    conversationHistory: updatedHistory,\n    response: {\n      success: true,\n      dialogueID: data.dialogueID,\n      messageID: messageID,\n      aiReply: aiResponse,\n      title: data.title,\n      extractedTags: tagsArray,  // ⭐ 返回数组格式\n      conversationHistory: updatedHistory\n    }\n  }\n};"
+  },
+  "type": "n8n-nodes-base.code",
+  "typeVersion": 2,
+  "position": [
+    5440,
+    6256
+  ],
+  "id": "32bf081e-6fff-41e8-b021-06f12ff7a7ac",
+  "name": "处理AI响应"
+}
+

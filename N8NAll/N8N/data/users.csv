@@ -1,0 +1,14 @@
+inviteCode,userName,email,status,createdAt,lastLoginAt
+DEMO2024,Young,young@example.com,active,2024-01-01,2024-01-15
+TESLA001,ElonFan,elonfan@example.com,active,2024-01-05,2024-01-20
+BYD2024,王先生,wang@example.com,active,2024-01-10,2024-01-18
+GEELY888,李女士,li@example.com,active,2024-01-12,2024-01-22
+NIO2025,蔚来用户,nio@example.com,active,2024-01-15,2024-01-25
+XPENG01,小鹏车主,xpeng@example.com,active,2024-01-18,2024-01-23
+LI2024,理想L9车主,li-auto@example.com,active,2024-01-20,2024-01-24
+AITO999,问界用户,aito@example.com,active,2024-01-22,2024-01-26
+TEST001,测试用户1,test1@example.com,active,2024-01-25,2024-01-27
+TEST002,测试用户2,test2@example.com,active,2024-01-26,2024-01-28
+ADMIN01,管理员,admin@example.com,active,2024-01-01,2024-01-28
+VIP2024,VIP用户,vip@example.com,active,2024-01-28,2024-01-28
+

@@ -1,0 +1,1858 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汽车图片智能查询系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 15px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            font-weight: bold;
+        }
+
+        .header .subtitle {
+            font-size: 1.3em;
+            opacity: 0.95;
+            margin-bottom: 10px;
+        }
+
+        .header .description {
+            font-size: 1em;
+            opacity: 0.85;
+        }
+
+        .search-card {
+            background: white;
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 40px;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .search-title {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            align-items: stretch;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 20px 25px;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 1.2em;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .input-wrapper input::placeholder {
+            color: #999;
+        }
+
+        .search-btn {
+            padding: 20px 50px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            min-width: 180px;
+        }
+
+        .search-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+        }
+
+        .search-btn:active:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .examples {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .examples span {
+            display: inline-block;
+            margin: 5px;
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.95em;
+        }
+
+        .examples span:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.2em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .loading-steps {
+            margin-top: 15px;
+            font-size: 0.95em;
+            color: #666;
+        }
+
+        .message {
+            padding: 20px 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+            display: none;
+            animation: slideIn 0.3s ease;
+            font-size: 1.05em;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .message.active {
+            display: block;
+        }
+
+        .error-message {
+            background: #fff3cd;
+            border: 3px solid #ffc107;
+            color: #856404;
+        }
+
+        .success-message {
+            background: #d4edda;
+            border: 3px solid #28a745;
+            color: #155724;
+        }
+
+        .info-message {
+            background: #d1ecf1;
+            border: 3px solid #17a2b8;
+            color: #0c5460;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: none;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .result-card.active {
+            display: block;
+        }
+
+        .result-header {
+            border-bottom: 3px solid #e0e0e0;
+            padding-bottom: 30px;
+            margin-bottom: 40px;
+        }
+
+        .result-title {
+            color: #667eea;
+            font-size: 2.2em;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .car-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 40px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .info-label {
+            font-size: 0.95em;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.3em;
+        }
+
+        .match-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .match-google {
+            background: #4285f4;
+            color: white;
+        }
+
+        .match-serp {
+            background: #34a853;
+            color: white;
+        }
+
+        .category-summary {
+            margin-bottom: 40px;
+        }
+
+        .category-summary h3 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .category-badges {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .category-badge {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+
+        .category-badge:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .category-badge strong {
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .images-section h3 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 25px;
+        }
+
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .image-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .image-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            transition: all 0.3s;
+        }
+
+        .image-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .image-info {
+            padding: 20px;
+        }
+
+        .image-category-tag {
+            display: inline-block;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 0.95em;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .category-外观 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .category-内饰 {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .category-座椅 {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .image-details {
+            font-size: 0.95em;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .image-modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            animation: zoomIn 0.3s ease;
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 30px;
+            right: 50px;
+            color: white;
+            font-size: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            transform: scale(1.2);
+            color: #667eea;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+
+        .back-to-top.active {
+            display: flex;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+
+        /* ========== 调试面板样式 ========== */
+        .debug-btn {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.5);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+
+        .debug-btn:hover {
+            transform: translateY(-5px) rotate(180deg);
+            box-shadow: 0 8px 25px rgba(240, 147, 251, 0.6);
+        }
+
+        .debug-panel {
+            position: fixed;
+            top: 0;
+            right: -450px;
+            width: 450px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.3);
+            z-index: 1001;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .debug-panel.active {
+            right: 0;
+        }
+
+        .debug-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+        }
+
+        .debug-overlay.active {
+            display: block;
+        }
+
+        .debug-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #e0e0e0;
+        }
+
+        .debug-header h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin: 0;
+        }
+
+        .debug-close {
+            font-size: 2em;
+            cursor: pointer;
+            color: #999;
+            transition: all 0.3s;
+        }
+
+        .debug-close:hover {
+            color: #f5576c;
+            transform: rotate(90deg);
+        }
+
+        .debug-section {
+            margin-bottom: 30px;
+        }
+
+        .debug-section h3 {
+            color: #667eea;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .debug-field {
+            margin-bottom: 20px;
+        }
+
+        .debug-field label {
+            display: block;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .debug-field input[type="text"],
+        .debug-field input[type="number"],
+        .debug-field select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .debug-field input:focus,
+        .debug-field select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .debug-field small {
+            display: block;
+            color: #666;
+            margin-top: 5px;
+            font-size: 0.85em;
+        }
+
+        .debug-toggle {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .debug-toggle label {
+            flex: 1;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 30px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+
+        .debug-btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .debug-action-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.95em;
+        }
+
+        .debug-action-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .debug-action-btn.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .debug-action-btn.warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .debug-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .debug-status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.9em;
+            font-family: 'Courier New', monospace;
+            display: none;
+        }
+
+        .debug-status.active {
+            display: block;
+        }
+
+        .debug-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .debug-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+
+        .debug-status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #17a2b8;
+        }
+
+        .config-preview {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .config-preview pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        @media (max-width: 768px) {
+            .debug-panel {
+                width: 100%;
+                right: -100%;
+            }
+
+            .debug-btn {
+                bottom: 100px;
+                right: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .search-card, .result-card {
+                padding: 25px;
+            }
+
+            .input-container {
+                flex-direction: column;
+            }
+
+            .search-btn {
+                width: 100%;
+            }
+
+            .images-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .car-info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 汽车图片智能查询系统</h1>
+            <div class="subtitle">AI驱动 · 智能匹配 · 高清图片</div>
+            <div class="description">输入任意车型名称，自动获取7张精选高清图片</div>
+        </div>
+
+        <div class="search-card">
+            <h2 class="search-title">🔍 开始搜索</h2>
+            
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        id="carNameInput" 
+                        placeholder="请输入车型名称，多个车型用逗号分隔，例如：奥迪A6L,宝马X5,特斯拉Model 3" 
+                        autocomplete="off"
+                    />
+                    <small style="display: block; margin-top: 8px; color: #666; font-size: 0.9em;">
+                        💡 提示：输入多个车型时用<strong>逗号</strong>或<strong>分号</strong>分隔
+                    </small>
+                </div>
+                <button class="search-btn" onclick="searchCar()">
+                    <span id="btnText">🚀 搜索图片</span>
+                </button>
+            </div>
+
+            <div class="examples" id="exampleCars">
+                <strong>热门车型：</strong>
+                <!-- 将从config.js动态加载 -->
+            </div>
+
+            <!-- 图片筛选器 -->
+            <div class="filter-section" id="filterSection" style="margin-top: 30px; padding: 25px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 15px;">
+                <h3 style="color: #667eea; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    📸 图片筛选
+                    <span style="font-size: 0.7em; color: #999; font-weight: normal;">(搜索前选择)</span>
+                </h3>
+                
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                    <!-- 分类筛选 -->
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">按分类</label>
+                        <select id="filterCategory" onchange="applyFilter()" style="width: 100%; padding: 12px 15px; border-radius: 10px; border: 2px solid #e0e0e0; font-size: 1em; cursor: pointer; background: white;">
+                            <option value="all">🎨 全部分类</option>
+                            <option value="外观">🚗 外观 (4张)</option>
+                            <option value="内饰">🎨 内饰 (2张)</option>
+                            <option value="座椅">💺 座椅 (1张)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- 视角筛选 -->
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">按视角类型</label>
+                        <select id="filterViewType" onchange="applyFilter()" style="width: 100%; padding: 12px 15px; border-radius: 10px; border: 2px solid #e0e0e0; font-size: 1em; cursor: pointer; background: white;">
+                            <option value="all">👁️ 全部视角</option>
+                            <optgroup label="外观视角">
+                                <option value="view45">📐 45度角</option>
+                                <option value="viewFront">👉 正面</option>
+                                <option value="view-45">📐 侧后45度</option>
+                                <option value="viewSide">➡️ 侧面</option>
+                            </optgroup>
+                            <optgroup label="内饰视角">
+                                <option value="viewCNSL">🎛️ 中控台</option>
+                                <option value="viewIP">📊 仪表盘</option>
+                            </optgroup>
+                            <optgroup label="座椅视角">
+                                <option value="viewDoor">💺 座椅</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    
+                    <!-- 重置按钮 -->
+                    <div>
+                        <button onclick="resetFilter()" style="padding: 12px 25px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: all 0.3s; box-shadow: 0 2px 10px rgba(240, 147, 251, 0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            🔄 重置筛选
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="filterStats" style="margin-top: 15px; padding: 10px 15px; background: white; border-radius: 8px; font-size: 0.95em; color: #666; display: none;">
+                    📊 筛选结果：显示 <strong id="filterCount">0</strong> 张图片
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div class="loading-text">正在智能匹配车型信息...</div>
+                <div class="loading-steps">
+                    <div id="step1">✓ 接收查询请求</div>
+                    <div id="step2" style="color: #ccc;">○ 模糊匹配车型数据库</div>
+                    <div id="step3" style="color: #ccc;">○ 提取高清图片</div>
+                    <div id="step4" style="color: #ccc;">○ 整理返回结果</div>
+                </div>
+            </div>
+
+            <div class="error-message message" id="errorMessage"></div>
+            <div class="success-message message" id="successMessage"></div>
+            <div class="info-message message" id="infoMessage"></div>
+        </div>
+
+        <div class="result-card" id="resultCard">
+            <div class="result-header">
+                <h2 class="result-title">📸 查询结果</h2>
+            </div>
+
+            <div class="car-info-grid" id="carInfo"></div>
+
+            <div class="category-summary" id="categorySummary"></div>
+
+            <div class="images-section">
+                <h3>🖼️ 图片展示</h3>
+                <div class="images-grid" id="imagesGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="back-to-top" id="backToTop" onclick="scrollToTop()">
+        ↑
+    </div>
+
+    <!-- 调试按钮 -->
+    <div class="debug-btn" onclick="toggleDebugPanel()" title="打开调试面板">
+        ⚙️
+    </div>
+
+    <!-- 调试面板遮罩 -->
+    <div class="debug-overlay" id="debugOverlay" onclick="toggleDebugPanel()"></div>
+
+    <!-- 调试面板 -->
+    <div class="debug-panel" id="debugPanel">
+        <div class="debug-header">
+            <h2>⚙️ 调试配置</h2>
+            <span class="debug-close" onclick="toggleDebugPanel()">&times;</span>
+        </div>
+
+        <!-- Webhook配置 -->
+        <div class="debug-section">
+            <h3>🔗 Webhook配置</h3>
+            
+            <div class="debug-field">
+                <label>环境选择</label>
+                <select id="debugEnvironment" onchange="updateDebugConfig()">
+                    <option value="production">生产环境</option>
+                    <option value="local">本地环境</option>
+                </select>
+            </div>
+
+            <div class="debug-field">
+                <label>生产环境URL</label>
+                <input type="text" id="debugProductionURL" placeholder="https://你的n8n域名/webhook/get-car-images" onchange="updateDebugConfig()">
+                <small>部署后的n8n服务器地址</small>
+            </div>
+
+            <div class="debug-field">
+                <label>本地环境URL</label>
+                <input type="text" id="debugLocalURL" placeholder="http://localhost:5678/webhook/get-car-images" onchange="updateDebugConfig()">
+                <small>本地开发测试地址</small>
+            </div>
+
+            <div class="debug-field">
+                <label>请求超时时间 (毫秒)</label>
+                <input type="number" id="debugTimeout" min="5000" max="120000" step="1000" onchange="updateDebugConfig()">
+                <small>建议30000ms以上</small>
+            </div>
+        </div>
+
+        <!-- 调试选项 -->
+        <div class="debug-section">
+            <h3>🐛 调试选项</h3>
+            
+            <div class="debug-toggle">
+                <label>启用调试日志</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="debugLogEnabled" onchange="updateDebugConfig()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="debug-toggle">
+                <label>显示详细错误</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="debugDetailedErrors" onchange="updateDebugConfig()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="debug-toggle">
+                <label>使用模拟数据</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="debugUseMock" onchange="updateDebugConfig()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="debug-field">
+                <label>模拟延迟 (毫秒)</label>
+                <input type="number" id="debugMockDelay" min="0" max="10000" step="500" onchange="updateDebugConfig()">
+                <small>模拟网络延迟时间</small>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="debug-section">
+            <h3>🎯 快速操作</h3>
+            
+            <div class="debug-btn-group">
+                <button class="debug-action-btn success" onclick="testConnection()">
+                    测试连接
+                </button>
+                <button class="debug-action-btn primary" onclick="saveDebugConfig()">
+                    保存配置
+                </button>
+            </div>
+
+            <div class="debug-btn-group">
+                <button class="debug-action-btn warning" onclick="resetDebugConfig()">
+                    重置配置
+                </button>
+                <button class="debug-action-btn primary" onclick="exportConfig()">
+                    导出配置
+                </button>
+            </div>
+
+            <div class="debug-status" id="debugStatus"></div>
+        </div>
+
+        <!-- 当前配置预览 -->
+        <div class="debug-section">
+            <h3>📋 当前配置</h3>
+            <div class="config-preview">
+                <pre id="configPreview"></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="image-modal" id="imageModal" onclick="closeModal()">
+        <span class="modal-close">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+
+    <!-- 引入配置文件 -->
+    <script src="config.js"></script>
+    
+    <script>
+        // 配置将从外部config.js文件加载
+
+        // ========== 全局变量 ==========
+        let currentSearchTerm = '';
+
+        // ========== 消息显示函数 ==========
+        function showMessage(type, message) {
+            hideAllMessages();
+            const messageDiv = document.getElementById(`${type}Message`);
+            messageDiv.textContent = message;
+            messageDiv.classList.add('active');
+            
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => messageDiv.classList.remove('active'), 5000);
+            }
+        }
+
+        function hideAllMessages() {
+            document.querySelectorAll('.message').forEach(msg => {
+                msg.classList.remove('active');
+            });
+        }
+
+        // ========== 加载步骤更新 ==========
+        function updateLoadingStep(step) {
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+            steps.forEach((s, i) => {
+                const el = document.getElementById(s);
+                if (i < step) {
+                    el.style.color = '#28a745';
+                    el.textContent = el.textContent.replace('○', '✓').replace('○', '✓');
+                } else if (i === step) {
+                    el.style.color = '#667eea';
+                    el.textContent = el.textContent.replace('✓', '○').replace('○', '⟳');
+                } else {
+                    el.style.color = '#ccc';
+                }
+            });
+        }
+
+        // ========== 快速搜索 ==========
+        function quickSearch(carName) {
+            document.getElementById('carNameInput').value = carName;
+            searchCar();
+        }
+
+        // ========== 主搜索函数 ==========
+        async function searchCar() {
+            const carNameInput = document.getElementById('carNameInput').value.trim();
+            
+            if (!carNameInput) {
+                showMessage('error', '❌ 请输入车型名称！');
+                document.getElementById('carNameInput').focus();
+                return;
+            }
+
+            // 🔥 解析多个车型（支持逗号、分号分隔）
+            const carNames = carNameInput
+                .split(/[,，;；]/)
+                .map(name => name.trim())
+                .filter(name => name.length > 0);
+            
+            if (carNames.length === 0) {
+                showMessage('error', '❌ 请输入有效的车型名称！');
+                return;
+            }
+            
+            currentSearchTerm = carNames.join(', ');
+            Logger.info(`开始搜索 ${carNames.length} 个车型:`, carNames);
+
+            // 显示加载状态
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('resultCard').classList.remove('active');
+            document.querySelector('.search-btn').disabled = true;
+            document.getElementById('btnText').textContent = '⏳ 搜索中...';
+            hideAllMessages();
+            updateLoadingStep(0);
+
+            try {
+                // 步骤1：准备请求
+                updateLoadingStep(1);
+                
+                let data;
+                
+                // 检查是否使用模拟数据
+                if (APP_CONFIG.debug.useMockData) {
+                    Logger.warn('使用模拟数据进行测试');
+                    showMessage('info', '⚠️ 当前处于模拟数据模式');
+                    
+                    // 模拟网络延迟
+                    await new Promise(resolve => setTimeout(resolve, APP_CONFIG.debug.mockDelay));
+                    updateLoadingStep(2);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    updateLoadingStep(3);
+                    
+                    // 使用模拟数据
+                    data = { ...MOCK_DATA, carName: carNames[0] };
+                    Logger.debug('模拟数据:', data);
+                } else {
+                    // 真实API请求
+                    const webhookURL = getWebhookURL();
+                    
+                    // 🔥 获取筛选参数
+                    const filterCategory = document.getElementById('filterCategory').value;
+                    const filterViewType = document.getElementById('filterViewType').value;
+                    
+                    const requestData = {
+                        carNames: carNames,  // 🔥 改为数组
+                        filterCategory: filterCategory,
+                        filterViewType: filterViewType
+                    };
+                    
+                    Logger.debug('请求URL:', webhookURL);
+                    Logger.debug('请求参数:', requestData);
+                    
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), APP_CONFIG.webhook.timeout);
+                    
+                    const response = await fetch(webhookURL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestData),
+                        signal: controller.signal
+                    });
+                    
+                    clearTimeout(timeoutId);
+
+                    // 步骤2：处理响应
+                    updateLoadingStep(2);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP错误！状态码: ${response.status}`);
+                    }
+
+                    data = await response.json();
+                    Logger.log('API响应:', data);
+                }
+
+                // 步骤3：解析数据
+                updateLoadingStep(3);
+
+                // 隐藏加载状态
+                document.getElementById('loading').classList.remove('active');
+                document.querySelector('.search-btn').disabled = false;
+                document.getElementById('btnText').textContent = '🚀 搜索图片';
+
+                if (data.success === false) {
+                    Logger.error('查询失败:', data);
+                    showMessage('error', `❌ ${data.error || '查询失败，请稍后重试'}`);
+                    return;
+                }
+
+                // 步骤4：显示结果
+                updateLoadingStep(4);
+                displayResults(data);
+                showMessage('success', `✅ 成功获取 ${data.totalImages || 0} 张图片！`);
+
+            } catch (error) {
+                Logger.error('搜索出错:', error);
+                document.getElementById('loading').classList.remove('active');
+                document.querySelector('.search-btn').disabled = false;
+                document.getElementById('btnText').textContent = '🚀 搜索图片';
+                
+                let errorMsg = `❌ 请求失败: ${error.message}`;
+                
+                if (APP_CONFIG.debug.showDetailedErrors) {
+                    errorMsg += `\n\n请检查：\n1. webhook URL是否正确配置\n2. n8n服务是否正常运行\n3. 网络连接是否正常\n4. CORS设置是否正确`;
+                    
+                    if (error.name === 'AbortError') {
+                        errorMsg = `❌ 请求超时（${APP_CONFIG.webhook.timeout}ms）\n\n请检查：\n1. 网络连接\n2. n8n服务器响应速度\n3. 增加超时时间（config.js中的timeout）`;
+                    }
+                }
+                
+                showMessage('error', errorMsg);
+            }
+        }
+
+        // ========== 筛选功能 ==========
+        
+        // 应用筛选
+        function applyFilter() {
+            if (!window.originalImages) return;
+            
+            const categoryFilter = document.getElementById('filterCategory').value;
+            const viewTypeFilter = document.getElementById('filterViewType').value;
+            
+            let filteredImages = window.originalImages;
+            
+            // 按分类筛选
+            if (categoryFilter !== 'all') {
+                filteredImages = filteredImages.filter(img => img.category === categoryFilter);
+            }
+            
+            // 按视角筛选
+            if (viewTypeFilter !== 'all') {
+                filteredImages = filteredImages.filter(img => img.view_type === viewTypeFilter);
+            }
+            
+            // 更新显示
+            updateImageGrid(filteredImages);
+            
+            // 显示筛选统计
+            const filterStats = document.getElementById('filterStats');
+            const filterCount = document.getElementById('filterCount');
+            filterCount.textContent = filteredImages.length;
+            filterStats.style.display = 'block';
+            
+            Logger.info(`筛选结果: ${filteredImages.length} 张图片 (分类:${categoryFilter}, 视角:${viewTypeFilter})`);
+        }
+
+        // 重置筛选
+        function resetFilter() {
+            document.getElementById('filterCategory').value = 'all';
+            document.getElementById('filterViewType').value = 'all';
+            document.getElementById('filterStats').style.display = 'none';
+            
+            if (window.originalImages) {
+                updateImageGrid(window.originalImages);
+            }
+            
+            Logger.info('筛选已重置');
+        }
+
+        // 更新图片网格
+        function updateImageGrid(images) {
+            const imagesGrid = document.getElementById('imagesGrid');
+            imagesGrid.innerHTML = '';
+            
+            if (images && images.length > 0) {
+                images.forEach((image, index) => {
+                    const imageUrl = image.url || image.image_url;
+                    const category = image.category || '未分类';
+                    const viewType = image.view_type || image.type || '标准视图';
+                    const imageIndex = image.index || image.image_index || index + 1;
+                    
+                    const imageCard = document.createElement('div');
+                    imageCard.className = 'image-card';
+                    imageCard.onclick = () => openModal(imageUrl);
+                    
+                    imageCard.innerHTML = `
+                        <img src="${imageUrl}" 
+                             alt="${category} - ${viewType}" 
+                             loading="lazy"
+                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22350%22 height=%22250%22%3E%3Crect fill=%22%23ddd%22 width=%22350%22 height=%22250%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 fill=%22%23999%22 text-anchor=%22middle%22 font-size=%2220%22%3E图片加载失败%3C/text%3E%3C/svg%3E'">
+                        <div class="image-info">
+                            <span class="image-category-tag category-${category}">${category}</span>
+                            <div class="image-details">
+                                <div><strong>视图类型:</strong> ${viewType}</div>
+                                <div><strong>序号:</strong> 第 ${imageIndex} 张</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    imagesGrid.appendChild(imageCard);
+                });
+            } else {
+                imagesGrid.innerHTML = '<p style="text-align: center; color: #666; padding: 60px; font-size: 1.2em;">😔 没有符合条件的图片</p>';
+            }
+        }
+
+        // ========== 显示结果 ==========
+        function displayResults(data) {
+            const resultCard = document.getElementById('resultCard');
+            const carInfo = document.getElementById('carInfo');
+            const categorySummary = document.getElementById('categorySummary');
+            const imagesGrid = document.getElementById('imagesGrid');
+
+            // 🔥 检查是否为多车型结果
+            const isMultipleCars = Array.isArray(data.results);
+            
+            if (isMultipleCars) {
+                // 多车型显示
+                displayMultipleCarResults(data.results);
+            } else {
+                // 单车型显示
+                displaySingleCarResult(data);
+            }
+
+            // 显示结果卡片并滚动到结果
+            resultCard.classList.add('active');
+            setTimeout(() => {
+                resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+        
+        // 单车型结果显示
+        function displaySingleCarResult(data) {
+            const carInfo = document.getElementById('carInfo');
+            const categorySummary = document.getElementById('categorySummary');
+            
+            // 匹配类型显示
+            let matchTypeText = '未知';
+            let matchClass = '';
+            if (data.matchType === 'googlesheet_fuzzy_match') {
+                matchTypeText = '数据库模糊匹配';
+                matchClass = 'match-google';
+            } else if (data.matchType === 'serpapi_search') {
+                matchTypeText = '搜索引擎匹配';
+                matchClass = 'match-serp';
+            }
+
+            // 显示车辆信息
+            carInfo.innerHTML = `
+                <div class="info-item">
+                    <span class="info-label">🚗 车型名称</span>
+                    <span class="info-value">${data.carName || '未知'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">🔑 车型ID</span>
+                    <span class="info-value">${data.carId || '未知'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">🎯 匹配方式</span>
+                    <span class="info-value">
+                        <span class="match-badge ${matchClass}">${matchTypeText}</span>
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">📊 图片总数</span>
+                    <span class="info-value">${data.totalImages || 0} 张</span>
+                </div>
+            `;
+
+            // 显示分类统计
+            if (data.categorySummary && Object.keys(data.categorySummary).length > 0) {
+                let summaryHTML = '<h3>📊 分类统计</h3><div class="category-badges">';
+                
+                const categoryIcons = {
+                    '外观': '🚘',
+                    '内饰': '🎨',
+                    '座椅': '💺'
+                };
+
+                for (const [category, count] of Object.entries(data.categorySummary)) {
+                    const icon = categoryIcons[category] || '📷';
+                    summaryHTML += `
+                        <div class="category-badge">
+                            ${icon} <strong>${category}</strong>: ${count} 张
+                        </div>
+                    `;
+                }
+                summaryHTML += '</div>';
+                categorySummary.innerHTML = summaryHTML;
+            }
+
+            // 保存原始数据
+            window.originalImages = data.images || [];
+            
+            // 显示筛选统计
+            const filterStats = document.getElementById('filterStats');
+            const filterCount = document.getElementById('filterCount');
+            filterCount.textContent = window.originalImages.length;
+            filterStats.style.display = 'block';
+            
+            // 使用新的updateImageGrid函数显示图片
+            updateImageGrid(window.originalImages);
+        }
+        
+        // 多车型结果显示
+        function displayMultipleCarResults(results) {
+            const carInfo = document.getElementById('carInfo');
+            const categorySummary = document.getElementById('categorySummary');
+            const imagesGrid = document.getElementById('imagesGrid');
+            
+            // 统计总数
+            let totalImages = 0;
+            let totalCars = results.length;
+            let successCars = 0;
+            
+            results.forEach(car => {
+                if (car.success !== false) {
+                    totalImages += (car.images || []).length;
+                    successCars++;
+                }
+            });
+            
+            // 显示汇总信息
+            carInfo.innerHTML = `
+                <div class="info-item">
+                    <span class="info-label">🚗 搜索车型数</span>
+                    <span class="info-value">${totalCars} 个</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">✅ 成功匹配</span>
+                    <span class="info-value">${successCars} 个</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">📊 图片总数</span>
+                    <span class="info-value">${totalImages} 张</span>
+                </div>
+            `;
+            
+            // 清空分类统计
+            categorySummary.innerHTML = '';
+            
+            // 保存所有图片
+            window.originalImages = [];
+            
+            // 清空图片网格
+            imagesGrid.innerHTML = '';
+            
+            // 遍历每个车型，分组显示
+            results.forEach((car, index) => {
+                // 创建车型分组
+                const carGroup = document.createElement('div');
+                carGroup.style.cssText = 'margin-bottom: 50px; padding: 25px; background: #f8f9fa; border-radius: 15px; border-left: 5px solid #667eea;';
+                
+                // 车型标题
+                const carTitle = document.createElement('h3');
+                carTitle.style.cssText = 'color: #667eea; margin-bottom: 20px; font-size: 1.5em;';
+                
+                if (car.success === false) {
+                    carTitle.innerHTML = `❌ ${car.inputCarName || '未知车型'} - 未找到`;
+                    carGroup.appendChild(carTitle);
+                    
+                    const errorMsg = document.createElement('p');
+                    errorMsg.style.cssText = 'color: #666; padding: 20px; text-align: center;';
+                    errorMsg.textContent = car.error || '搜索失败';
+                    carGroup.appendChild(errorMsg);
+                } else {
+                    carTitle.innerHTML = `🚗 ${car.carName} <span style="font-size: 0.8em; color: #999;">(${car.images.length}张图片)</span>`;
+                    carGroup.appendChild(carTitle);
+                    
+                    // 车型信息
+                    const carDetails = document.createElement('div');
+                    carDetails.style.cssText = 'display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;';
+                    carDetails.innerHTML = `
+                        <span style="background: white; padding: 8px 15px; border-radius: 8px;"><strong>车型ID:</strong> ${car.carId}</span>
+                        <span style="background: white; padding: 8px 15px; border-radius: 8px;"><strong>匹配方式:</strong> ${car.matchType === 'googlesheet_fuzzy_match' ? '数据库匹配' : '搜索引擎'}</span>
+                    `;
+                    carGroup.appendChild(carDetails);
+                    
+                    // 车型图片网格
+                    const carImageGrid = document.createElement('div');
+                    carImageGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;';
+                    
+                    car.images.forEach((image, imgIndex) => {
+                        const imageUrl = image.url || image.image_url;
+                        const category = image.category || '未分类';
+                        const viewType = image.view_type || '标准视图';
+                        
+                        const imageCard = document.createElement('div');
+                        imageCard.className = 'image-card';
+                        imageCard.onclick = () => openModal(imageUrl);
+                        
+                        imageCard.innerHTML = `
+                            <img src="${imageUrl}" alt="${category} - ${viewType}" loading="lazy"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22350%22 height=%22250%22%3E%3Crect fill=%22%23ddd%22 width=%22350%22 height=%22250%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 fill=%22%23999%22 text-anchor=%22middle%22 font-size=%2220%22%3E图片加载失败%3C/text%3E%3C/svg%3E'">
+                            <div class="image-info">
+                                <span class="image-category-tag category-${category}">${category}</span>
+                                <div class="image-details">
+                                    <div><strong>视图类型:</strong> ${viewType}</div>
+                                    <div><strong>序号:</strong> 第 ${image.index || imgIndex + 1} 张</div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        carImageGrid.appendChild(imageCard);
+                        
+                        // 添加到原始图片数组
+                        window.originalImages.push({
+                            ...image,
+                            carName: car.carName  // 添加车型名称标识
+                        });
+                    });
+                    
+                    carGroup.appendChild(carImageGrid);
+                }
+                
+                imagesGrid.appendChild(carGroup);
+            });
+            
+            // 显示筛选统计
+            const filterStats = document.getElementById('filterStats');
+            const filterCount = document.getElementById('filterCount');
+            filterCount.textContent = totalImages;
+            filterStats.style.display = 'block';
+        }
+
+        // ========== 图片模态框 ==========
+        function openModal(imageUrl) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.classList.add('active');
+            modalImg.src = imageUrl;
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').classList.remove('active');
+        }
+
+        // ========== 回到顶部 ==========
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        window.addEventListener('scroll', () => {
+            const backToTop = document.getElementById('backToTop');
+            if (window.pageYOffset > 300) {
+                backToTop.classList.add('active');
+            } else {
+                backToTop.classList.remove('active');
+            }
+        });
+
+        // ========== 键盘事件 ==========
+        document.getElementById('carNameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchCar();
+            }
+        });
+
+        // ESC键关闭模态框
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // ========== 调试面板函数 ==========
+        
+        // 切换调试面板
+        function toggleDebugPanel() {
+            const panel = document.getElementById('debugPanel');
+            const overlay = document.getElementById('debugOverlay');
+            panel.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        // 从配置加载到调试面板
+        function loadDebugPanel() {
+            document.getElementById('debugEnvironment').value = APP_CONFIG.webhook.environment;
+            document.getElementById('debugProductionURL').value = APP_CONFIG.webhook.productionURL;
+            document.getElementById('debugLocalURL').value = APP_CONFIG.webhook.localURL;
+            document.getElementById('debugTimeout').value = APP_CONFIG.webhook.timeout;
+            document.getElementById('debugLogEnabled').checked = APP_CONFIG.debug.logAPIRequests;
+            document.getElementById('debugDetailedErrors').checked = APP_CONFIG.debug.showDetailedErrors;
+            document.getElementById('debugUseMock').checked = APP_CONFIG.debug.useMockData;
+            document.getElementById('debugMockDelay').value = APP_CONFIG.debug.mockDelay;
+            
+            updateConfigPreview();
+        }
+
+        // 更新配置（实时）
+        function updateDebugConfig() {
+            APP_CONFIG.webhook.environment = document.getElementById('debugEnvironment').value;
+            APP_CONFIG.webhook.productionURL = document.getElementById('debugProductionURL').value;
+            APP_CONFIG.webhook.localURL = document.getElementById('debugLocalURL').value;
+            APP_CONFIG.webhook.timeout = parseInt(document.getElementById('debugTimeout').value);
+            APP_CONFIG.debug.logAPIRequests = document.getElementById('debugLogEnabled').checked;
+            APP_CONFIG.webhook.debug = document.getElementById('debugLogEnabled').checked;
+            APP_CONFIG.debug.showDetailedErrors = document.getElementById('debugDetailedErrors').checked;
+            APP_CONFIG.debug.useMockData = document.getElementById('debugUseMock').checked;
+            APP_CONFIG.debug.mockDelay = parseInt(document.getElementById('debugMockDelay').value);
+            
+            updateConfigPreview();
+            Logger.info('配置已更新');
+        }
+
+        // 更新配置预览
+        function updateConfigPreview() {
+            const preview = {
+                webhook: {
+                    currentURL: getWebhookURL(),
+                    environment: APP_CONFIG.webhook.environment,
+                    timeout: APP_CONFIG.webhook.timeout
+                },
+                debug: {
+                    logEnabled: APP_CONFIG.debug.logAPIRequests,
+                    detailedErrors: APP_CONFIG.debug.showDetailedErrors,
+                    useMockData: APP_CONFIG.debug.useMockData,
+                    mockDelay: APP_CONFIG.debug.mockDelay
+                }
+            };
+            
+            document.getElementById('configPreview').textContent = JSON.stringify(preview, null, 2);
+        }
+
+        // 测试连接
+        async function testConnection() {
+            const statusDiv = document.getElementById('debugStatus');
+            statusDiv.className = 'debug-status info active';
+            statusDiv.textContent = '⏳ 正在测试连接...';
+            
+            try {
+                const webhookURL = getWebhookURL();
+                Logger.info('测试连接:', webhookURL);
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), APP_CONFIG.webhook.timeout);
+                
+                const response = await fetch(webhookURL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ carName: '奥迪A6L' }),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.className = 'debug-status success active';
+                    statusDiv.textContent = `✅ 连接成功！\n响应时间: ${response.headers.get('x-response-time') || 'N/A'}\ncarID: ${data.carId || 'N/A'}`;
+                    Logger.info('测试成功:', data);
+                } else {
+                    statusDiv.className = 'debug-status error active';
+                    statusDiv.textContent = `❌ 连接失败！\nHTTP状态码: ${response.status}\n${response.statusText}`;
+                }
+            } catch (error) {
+                statusDiv.className = 'debug-status error active';
+                if (error.name === 'AbortError') {
+                    statusDiv.textContent = `❌ 连接超时！\n超时时间: ${APP_CONFIG.webhook.timeout}ms\n请检查网络或增加超时时间`;
+                } else {
+                    statusDiv.textContent = `❌ 连接错误！\n${error.message}\n\n请检查:\n1. URL是否正确\n2. n8n服务是否运行\n3. 网络连接\n4. CORS设置`;
+                }
+                Logger.error('测试失败:', error);
+            }
+        }
+
+        // 保存配置到localStorage
+        function saveDebugConfig() {
+            updateDebugConfig();
+            
+            const config = {
+                webhook: {
+                    productionURL: APP_CONFIG.webhook.productionURL,
+                    localURL: APP_CONFIG.webhook.localURL,
+                    environment: APP_CONFIG.webhook.environment,
+                    timeout: APP_CONFIG.webhook.timeout
+                },
+                debug: {
+                    logAPIRequests: APP_CONFIG.debug.logAPIRequests,
+                    showDetailedErrors: APP_CONFIG.debug.showDetailedErrors,
+                    useMockData: APP_CONFIG.debug.useMockData,
+                    mockDelay: APP_CONFIG.debug.mockDelay
+                }
+            };
+            
+            localStorage.setItem('carSearchConfig', JSON.stringify(config));
+            
+            const statusDiv = document.getElementById('debugStatus');
+            statusDiv.className = 'debug-status success active';
+            statusDiv.textContent = '✅ 配置已保存到浏览器本地存储！';
+            
+            setTimeout(() => {
+                statusDiv.classList.remove('active');
+            }, 3000);
+            
+            Logger.info('配置已保存:', config);
+        }
+
+        // 从localStorage加载配置
+        function loadSavedConfig() {
+            const saved = localStorage.getItem('carSearchConfig');
+            if (saved) {
+                try {
+                    const config = JSON.parse(saved);
+                    
+                    // 合并到APP_CONFIG
+                    if (config.webhook) {
+                        Object.assign(APP_CONFIG.webhook, config.webhook);
+                    }
+                    if (config.debug) {
+                        Object.assign(APP_CONFIG.debug, config.debug);
+                    }
+                    
+                    Logger.info('已加载保存的配置:', config);
+                    return true;
+                } catch (e) {
+                    Logger.error('加载配置失败:', e);
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        // 重置配置
+        function resetDebugConfig() {
+            if (confirm('确定要重置所有配置吗？')) {
+                localStorage.removeItem('carSearchConfig');
+                location.reload();
+            }
+        }
+
+        // 导出配置
+        function exportConfig() {
+            updateDebugConfig();
+            
+            const config = {
+                webhook: {
+                    productionURL: APP_CONFIG.webhook.productionURL,
+                    localURL: APP_CONFIG.webhook.localURL,
+                    environment: APP_CONFIG.webhook.environment,
+                    timeout: APP_CONFIG.webhook.timeout,
+                    debug: APP_CONFIG.webhook.debug
+                },
+                debug: APP_CONFIG.debug
+            };
+            
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'car-search-config.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            const statusDiv = document.getElementById('debugStatus');
+            statusDiv.className = 'debug-status success active';
+            statusDiv.textContent = '✅ 配置已导出！';
+            
+            setTimeout(() => {
+                statusDiv.classList.remove('active');
+            }, 3000);
+        }
+
+        // ========== 初始化示例车型 ==========
+        function initExampleCars() {
+            const exampleContainer = document.getElementById('exampleCars');
+            const strongTag = exampleContainer.querySelector('strong');
+            
+            APP_CONFIG.ui.exampleCars.forEach(carName => {
+                const span = document.createElement('span');
+                span.textContent = carName;
+                span.onclick = () => quickSearch(carName);
+                exampleContainer.appendChild(span);
+            });
+        }
+
+        // ========== 页面加载完成 ==========
+        window.addEventListener('DOMContentLoaded', () => {
+            Logger.info('🚗 汽车图片智能查询系统已就绪！');
+            
+            // 先尝试加载保存的配置
+            const hasSavedConfig = loadSavedConfig();
+            if (hasSavedConfig) {
+                Logger.info('✅ 已加载保存的配置');
+            }
+            
+            // 加载示例车型
+            initExampleCars();
+            
+            // 初始化调试面板
+            loadDebugPanel();
+            
+            // 验证配置
+            const validation = validateConfig();
+            if (!validation.valid) {
+                showMessage('info', '⚠️ 请点击右下角⚙️按钮配置webhook地址');
+            } else if (validation.warnings.length > 0) {
+                if (validation.warnings.some(w => w.includes('模拟数据'))) {
+                    showMessage('info', '⚠️ 当前处于模拟数据模式');
+                }
+            }
+            
+            // 设置输入框占位符
+            document.getElementById('carNameInput').placeholder = APP_CONFIG.ui.placeholder;
+            
+            // 自动聚焦输入框
+            if (APP_CONFIG.ui.autoFocusInput) {
+                document.getElementById('carNameInput').focus();
+            }
+            
+            Logger.info('🎯 提示：点击右下角的⚙️按钮打开调试配置面板');
+        });
+    </script>
+</body>
+</html>
+

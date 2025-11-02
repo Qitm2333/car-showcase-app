@@ -1,0 +1,193 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "car-image-filter",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*, null"
+        }
+      },
+      "id": "121a7e1e-3c4d-4b15-978c-4ec3ca150d05",
+      "name": "Webhook接收筛选请求1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        3600,
+        2240
+      ],
+      "webhookId": "car-image-filter"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1550254241,
+          "mode": "list",
+          "cachedResultName": "CarImageURLMVP用",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=1550254241"
+        },
+        "options": {}
+      },
+      "id": "3ed5c50d-138e-4406-bfab-6f144d9f0c96",
+      "name": "读取Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        4080,
+        2240
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 解析并验证筛选参数\nconst input = $input.item.json.body || $input.item.json;\n\nconst filters = {\n  keyword: (input.keyword || '').trim(),\n  brands: Array.isArray(input.brands) ? input.brands : [],\n  models: Array.isArray(input.models) ? input.models : [],\n  views: Array.isArray(input.views) ? input.views : [],\n  timestamp: new Date().toISOString()\n};\n\nconsole.log('===== 接收到的筛选条件 =====');\nconsole.log('关键词:', filters.keyword);\nconsole.log('品牌:', filters.brands.join(', ') || '无');\nconsole.log('车型:', filters.models.join(', ') || '无');\nconsole.log('视角:', filters.views.join(', ') || '无');\nconsole.log('==============================');\n\nreturn { json: filters };"
+      },
+      "id": "b525215b-1bb0-4a2b-8889-6cf4d675f75e",
+      "name": "解析筛选条件",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3888,
+        2240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 高级筛选逻辑 - 修复版\nconst filters = $('解析筛选条件').item.json;\nconst sheetData = $input.all();\n\nconsole.log('===== 筛选执行 =====');\nconsole.log('总数据条数:', sheetData.length);\nconsole.log('筛选条件:', JSON.stringify(filters));\n\n// 筛选函数\nfunction matchesFilters(row) {\n  const carName = (row.carName || '').toLowerCase();\n  const vehicleClass = (row.vehicleClass || '').toLowerCase();\n  const viewType = (row.viewType || '').toLowerCase(); // 转小写\n  \n  // 1. 关键词搜索 - 修复版（支持多关键词，任一匹配）\n  if (filters.keyword) {\n    const keywords = filters.keyword.toLowerCase().split(/\\s+/); // 按空格分割\n    const matchesAnyKeyword = keywords.some(keyword => \n      keyword && carName.includes(keyword)\n    );\n    if (!matchesAnyKeyword) {\n      return false;\n    }\n  }\n  \n  // 2. 品牌筛选\n  if (filters.brands && filters.brands.length > 0) {\n    const matchesBrand = filters.brands.some(brand => \n      carName.includes(brand.toLowerCase())\n    );\n    if (!matchesBrand) {\n      return false;\n    }\n  }\n  \n  // 3. 车型筛选 - 匹配 vehicleClass 或 carName\n  if (filters.models && filters.models.length > 0) {\n    const matchesModel = filters.models.some(model => {\n      const modelLower = model.toLowerCase();\n      // vehicleClass 可能是 \"紧凑型车Sedan\"，所以用 includes\n      return vehicleClass.includes(modelLower) || carName.includes(modelLower);\n    });\n    if (!matchesModel) {\n      return false;\n    }\n  }\n  \n  // 4. 视角筛选 - 转小写比较\n  if (filters.views && filters.views.length > 0) {\n    const matchesView = filters.views.some(view => \n      viewType === view.toLowerCase()\n    );\n    if (!matchesView) {\n      return false;\n    }\n  }\n  \n  return true;\n}\n\n// 执行筛选\nconst filteredResults = [];\nsheetData.forEach((item, index) => {\n  if (matchesFilters(item.json)) {\n    filteredResults.push({\n      json: item.json,\n      pairedItem: { item: index }\n    });\n  }\n});\n\nconsole.log('筛选后结果数:', filteredResults.length);\nconsole.log('====================');\n\n// 如果没有结果\nif (filteredResults.length === 0) {\n  return [{\n    json: {\n      _noResults: true,\n      message: '未找到匹配的结果',\n      filters: filters\n    },\n    pairedItem: { item: 0 }\n  }];\n}\n\nreturn filteredResults;"
+      },
+      "id": "fea8a5f4-eb76-412f-b9ba-e703b194d195",
+      "name": "执行筛选",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4336,
+        2240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 格式化返回结果\nconst allItems = $input.all();\nconst filters = $('解析筛选条件').item.json;\n\n// 检查是否有结果\nif (allItems.length === 1 && allItems[0].json._noResults) {\n  return {\n    json: {\n      success: true,\n      count: 0,\n      results: [],\n      filters: filters,\n      message: '未找到匹配的结果',\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// 提取所有结果\nconst results = allItems.map(item => item.json);\n\nconsole.log('===== 最终返回 =====');\nconsole.log('结果数量:', results.length);\nconsole.log('完整返回数据:', JSON.stringify({\n  success: true,\n  count: results.length,\n  results: results.slice(0, 2), // 只打印前2条\n  filters: filters\n}, null, 2));\nconsole.log('====================');\n\nreturn {\n  json: {\n    success: true,\n    count: results.length,\n    results: results,\n    filters: filters,\n    timestamp: new Date().toISOString()\n  }\n};\n\nconsole.log('完整返回数据:', JSON.stringify({\n  success: true,\n  count: results.length,\n  results: results.slice(0, 2)\n}, null, 2));"
+      },
+      "id": "359ebe7b-ff89-4772-9ee7-f853d03caebd",
+      "name": "格式化响应",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4656,
+        2240
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "81061b11-e921-4f27-a493-b458c01a95b2",
+      "name": "返回结果1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        4960,
+        2240
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook接收筛选请求1": {
+      "main": [
+        [
+          {
+            "node": "解析筛选条件",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "读取Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "执行筛选",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解析筛选条件": {
+      "main": [
+        [
+          {
+            "node": "读取Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "执行筛选": {
+      "main": [
+        [
+          {
+            "node": "格式化响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "格式化响应": {
+      "main": [
+        [
+          {
+            "node": "返回结果1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5cb72472896fce0666bc03ef84936c4f09ec11e6b4f95f9aebe3d538947c7935"
+  }
+}

@@ -1,0 +1,294 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-analysis",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-4789-0123-456789abcdef",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const action = $input.item.json.body.action;\nreturn {json: {action: action, data: $input.item.json.body}};"
+      },
+      "id": "b2c3d4e5-f6a7-4890-1234-567890bcdefg",
+      "name": "Router",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "sendMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "cond1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "sendMessage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "generateReport",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "cond2"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "generateReport"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "getDialogueList",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "cond3"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "getDialogueList"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c3d4e5f6-a7b8-4901-2345-678901cdefgh",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        680,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json.data;\nconst content = data.content || '';\nconst keywords = ['外观','内饰','性能','续航','空间','配置','智能化','价格'];\nconst extractedTags = keywords.filter(k => content.includes(k));\nlet aiReply = '好的，我理解了您的需求。';\nif (extractedTags.length > 0) {\n  aiReply += `我将重点关注${extractedTags.join('、')}这些方面。当您准备好后，说"生成报告"。`;\n} else {\n  aiReply += '请告诉我您关心的对比维度。';\n}\nconst messageID = 'msg_' + Date.now();\nconst dialogueID = data.dialogueID || 'dlg_' + Date.now();\nconst timestamp = new Date().toISOString();\nreturn {json: {success: true, messageID, aiReply, extractedTags, dialogueID, timestamp, userID: data.userID, userContent: content}};"
+      },
+      "id": "d4e5f6a7-b8c9-5012-3456-789012defghi",
+      "name": "ProcessMessage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "e5f6a7b8-c9d0-5123-4567-890123efghij",
+      "name": "RespondMessage",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json.data;\nconst tags = data.tags || ['外观','内饰'];\nconst vehicles = data.vehicles || [{name:'极氪009'},{name:'小鹏X9'},{name:'腾势D9'}];\nconst reportID = 'report_' + Date.now();\nconst html = '<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>报告</title><style>body{font-family:sans-serif;padding:40px}table{width:100%;border-collapse:collapse}th,td{padding:15px;border:1px solid #ddd}button{position:fixed;top:20px;right:20px;padding:10px 20px;background:#667eea;color:#fff;border:none;border-radius:8px;cursor:pointer}@media print{button{display:none}}</style></head><body><button onclick=\"window.print()\">打印PDF</button><h1>车型对比报告</h1><table><thead><tr><th>维度</th>'+vehicles.map(v=>'<th>'+v.name+'</th>').join('')+'</tr></thead><tbody>'+tags.map(t=>'<tr><td>'+t+'</td>'+vehicles.map(()=>'<td>优秀</td>').join('')+'</tr>').join('')+'</tbody></table><p style=\"margin-top:30px;text-align:center\">报告ID:'+reportID+'</p></body></html>';\nreturn {json: {success: true, reportID, htmlContent: html, createTime: new Date().toISOString()}};"
+      },
+      "id": "f6a7b8c9-d0e1-5234-5678-901234fghijk",
+      "name": "GenerateReport",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "a7b8c9d0-e1f2-5345-6789-012345ghijkl",
+      "name": "RespondReport",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {json: {success: true, dialogues: []}};"
+      },
+      "id": "b8c9d0e1-f2a3-5456-7890-123456hijklm",
+      "name": "GetDialogues",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "c9d0e1f2-a3b4-5567-8901-234567ijklmn",
+      "name": "RespondList",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        600
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "ProcessMessage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GenerateReport",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetDialogues",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ProcessMessage": {
+      "main": [
+        [
+          {
+            "node": "RespondMessage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GenerateReport": {
+      "main": [
+        [
+          {
+            "node": "RespondReport",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetDialogues": {
+      "main": [
+        [
+          {
+            "node": "RespondList",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  }
+}
+

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电动车设计维度对比</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: #fafafa;
+            padding: 60px 40px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            margin-bottom: 60px;
+            border-left: 4px solid #667eea;
+            padding-left: 20px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            color: #999;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+        
+        .table-wrapper {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead tr {
+            background: #f8f9fc;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        th {
+            padding: 24px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+            letter-spacing: 0.3px;
+        }
+        
+        th:first-child {
+            width: 15%;
+        }
+        
+        th:not(:first-child) {
+            width: 28.33%;
+            text-align: center;
+        }
+        
+        tbody tr {
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+        }
+        
+        tbody tr:hover {
+            background: #fafbff;
+        }
+        
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+        
+        td {
+            padding: 28px 20px;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+        }
+        
+        td:first-child {
+            font-weight: 500;
+            color: #333;
+            background: #f9fafb;
+        }
+        
+        td:not(:first-child) {
+            text-align: center;
+        }
+        
+        .dimension-label {
+            display: block;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        .dimension-desc {
+            display: block;
+            font-size: 12px;
+            color: #999;
+            font-weight: 300;
+            margin-top: 4px;
+        }
+        
+        .car-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .car-image {
+            width: 120px;
+            height: 80px;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+        
+        .car-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: #333;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 40px 20px;
+            }
+            
+            .header {
+                margin-bottom: 40px;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+            
+            th, td {
+                padding: 16px 12px;
+                font-size: 13px;
+            }
+            
+            .car-image {
+                width: 100px;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>设计维度对比矩阵</h1>
+            <p>Design Dimension Comparison Matrix</p>
+        </div>
+        
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>
+                            <div class="car-header">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 80'%3E%3Crect fill='%23f0f0f0' width='120' height='80'/%3E%3Ctext x='60' y='40' font-size='14' text-anchor='middle' fill='%23999'%3E极氪009%3C/text%3E%3C/svg%3E" alt="极氪009" class="car-image">
+                                <div class="car-name">极氪009</div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="car-header">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 80'%3E%3Crect fill='%23f0f0f0' width='120' height='80'/%3E%3Ctext x='60' y='40' font-size='14' text-anchor='middle' fill='%23999'%3E小鹏X9%3C/text%3E%3C/svg%3E" alt="小鹏X9" class="car-image">
+                                <div class="car-name">小鹏X9</div>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="car-header">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 80'%3E%3Crect fill='%23f0f0f0' width='120' height='80'/%3E%3Ctext x='60' y='40' font-size='14' text-anchor='middle' fill='%23999'%3E腾势D9%3C/text%3E%3C/svg%3E" alt="腾势D9" class="car-image">
+                                <div class="car-name">腾势D9</div>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>外饰</td>
+                        <td>
+                            <span class="dimension-label">竖直条纹格栅</span>
+                            <span class="dimension-desc">方正硬派风格 · 豪华感明显</span>
+                        </td>
+                        <td>
+                            <span class="dimension-label">蜂窝状格栅设计</span>
+                            <span class="dimension-desc">流线型设计 · 现代科技感</span>
+                        </td>
+                        <td>
+                            <span class="dimension-label">波浪形格栅设计</span>
+                            <span class="dimension-desc">优雅曲线 · 稳重大气</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>内饰</td>
+                        <td>
+                            <span class="dimension-label">豪华质感设计</span>
+                            <span class="dimension-desc">座椅评分 9.2 · 大屏中控</span>
+                            <span class="dimension-desc">高级音响系统 · 多层次布局</span>
+                        </td>
+                        <td>
+                            <span class="dimension-label">科技驾驶舱</span>
+                            <span class="dimension-desc">侧滑门设计 · 材质拼接</span>
+                            <span class="dimension-desc">智能化配置 · 宽敞空间</span>
+                        </td>
+                        <td>
+                            <span class="dimension-label">奢华大气设计</span>
+                            <span class="dimension-desc">优质材料搭配 · 舒适乘坐</span>
+                            <span class="dimension-desc">人性化布局 · 最新科技配置</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>基本信息</td>
+                        <td>
+                            <span class="dimension-label">6/7座电动MPV</span>
+                            <span class="dimension-desc">品牌：极氪（吉利高端）</span>
+                            <span class="dimension-desc">续航：700km+ · 定位：高端豪华</span>
+                        </td>
+                        <td>
+                            <span class="dimension-label">7座电动MPV</span>
+                            <span class="dimension-desc">品牌：小鹏汽车</span>
+                            <span class="dimension-desc">续航：600km+ · XPILOT自动驾驶</span>
+                        </td>
+                        <td>
+                            <span class="dimension-label">7座电动MPV</span>
+                            <span class="dimension-desc">品牌：腾势（比亚迪高端）</span>
+                            <span class="dimension-desc">续航：600km+ · DM-i混动选项</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

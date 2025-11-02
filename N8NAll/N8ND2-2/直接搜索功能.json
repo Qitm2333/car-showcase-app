@@ -1,0 +1,393 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1837650523,
+          "mode": "list",
+          "cachedResultName": "NewallCarMapping完整",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=1837650523"
+        },
+        "options": {}
+      },
+      "id": "a99fb46c-1fb8-485a-808e-acfe8597e32c",
+      "name": "读取Google Sheet2",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        4112,
+        3248
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 模糊匹配算法 - 最小修改版\nconst inputCarName = $('准备查询2').item.json.carName;\nconst allCars = $input.all();\n\nconst MATCH_THRESHOLD = 0.70; // 匹配阈值70%\n\nconsole.log(`\\n===== 开始模糊匹配 =====`);\nconsole.log(`输入车型: ${inputCarName}`);\nconsole.log(`数据库总数: ${allCars.length}`);\n\n// ===== 字符串相似度算法 =====\n\n// 1. Levenshtein距离（编辑距离）\nfunction levenshteinDistance(str1, str2) {\n  const len1 = str1.length;\n  const len2 = str2.length;\n  const matrix = [];\n\n  for (let i = 0; i <= len1; i++) {\n    matrix[i] = [i];\n  }\n  for (let j = 0; j <= len2; j++) {\n    matrix[0][j] = j;\n  }\n\n  for (let i = 1; i <= len1; i++) {\n    for (let j = 1; j <= len2; j++) {\n      const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;\n      matrix[i][j] = Math.min(\n        matrix[i - 1][j] + 1,\n        matrix[i][j - 1] + 1,\n        matrix[i - 1][j - 1] + cost\n      );\n    }\n  }\n\n  return matrix[len1][len2];\n}\n\n// 2. 基于编辑距离的相似度（0-1）\nfunction levenshteinSimilarity(str1, str2) {\n  const maxLen = Math.max(str1.length, str2.length);\n  if (maxLen === 0) return 1.0;\n  const distance = levenshteinDistance(str1, str2);\n  return 1 - distance / maxLen;\n}\n\n// 3. Jaro-Winkler相似度\nfunction jaroWinklerSimilarity(s1, s2) {\n  // Jaro相似度\n  function jaroSimilarity(s1, s2) {\n    if (s1.length === 0 && s2.length === 0) return 1.0;\n    if (s1.length === 0 || s2.length === 0) return 0.0;\n\n    const matchDistance = Math.floor(Math.max(s1.length, s2.length) / 2) - 1;\n    const s1Matches = new Array(s1.length).fill(false);\n    const s2Matches = new Array(s2.length).fill(false);\n\n    let matches = 0;\n    let transpositions = 0;\n\n    for (let i = 0; i < s1.length; i++) {\n      const start = Math.max(0, i - matchDistance);\n      const end = Math.min(i + matchDistance + 1, s2.length);\n\n      for (let j = start; j < end; j++) {\n        if (s2Matches[j] || s1[i] !== s2[j]) continue;\n        s1Matches[i] = true;\n        s2Matches[j] = true;\n        matches++;\n        break;\n      }\n    }\n\n    if (matches === 0) return 0.0;\n\n    let k = 0;\n    for (let i = 0; i < s1.length; i++) {\n      if (!s1Matches[i]) continue;\n      while (!s2Matches[k]) k++;\n      if (s1[i] !== s2[k]) transpositions++;\n      k++;\n    }\n\n    return (\n      (matches / s1.length +\n        matches / s2.length +\n        (matches - transpositions / 2) / matches) /\n      3\n    );\n  }\n\n  const jaro = jaroSimilarity(s1, s2);\n  const prefixLength = Math.min(4, s1.length, s2.length);\n  let prefix = 0;\n  for (let i = 0; i < prefixLength; i++) {\n    if (s1[i] === s2[i]) prefix++;\n    else break;\n  }\n\n  return jaro + prefix * 0.1 * (1 - jaro);\n}\n\n// 4. 简单包含匹配\nfunction containsMatch(input, target) {\n  const inputLower = input.toLowerCase();\n  const targetLower = target.toLowerCase();\n  \n  // 完全包含\n  if (targetLower.includes(inputLower) || inputLower.includes(targetLower)) {\n    return 1.0;\n  }\n  \n  // 分词后的包含匹配\n  const inputTokens = inputLower.split(/[\\s\\-]+/);\n  const targetTokens = targetLower.split(/[\\s\\-]+/);\n  \n  let matchCount = 0;\n  for (const inputToken of inputTokens) {\n    if (inputToken.length < 2) continue;\n    for (const targetToken of targetTokens) {\n      if (targetToken.includes(inputToken) || inputToken.includes(targetToken)) {\n        matchCount++;\n        break;\n      }\n    }\n  }\n  \n  return inputTokens.length > 0 ? matchCount / inputTokens.length : 0;\n}\n\n// 5. 品牌+车型分离匹配（针对中文车型）\nfunction brandModelMatch(input, target) {\n  const inputParts = input.split(/[-\\s]+/);\n  const targetParts = target.split(/[-\\s]+/);\n  \n  if (inputParts.length < 2 || targetParts.length < 2) {\n    return 0;\n  }\n  \n  // 品牌匹配\n  const brandMatch = inputParts[0].toLowerCase() === targetParts[0].toLowerCase() ? 1 : 0;\n  \n  // 车型匹配\n  const modelSimilarity = levenshteinSimilarity(\n    inputParts.slice(1).join('').toLowerCase(),\n    targetParts.slice(1).join('').toLowerCase()\n  );\n  \n  // 品牌必须匹配，车型相似度>=0.6\n  return brandMatch && modelSimilarity >= 0.6 ? (brandMatch + modelSimilarity) / 2 : 0;\n}\n\n// ===== 综合匹配计算 =====\nfunction calculateComprehensiveScore(input, target) {\n  const inputNorm = input.replace(/\\s+/g, '').toLowerCase();\n  const targetNorm = target.replace(/\\s+/g, '').toLowerCase();\n  \n  // 🔥 关键修改：检查完整包含\n  const inputClean = input.replace(/[\\s\\-]/g, '').toLowerCase();\n  const targetClean = target.replace(/[\\s\\-]/g, '').toLowerCase();\n  const isFullyContained = targetClean.includes(inputClean) && inputClean.length >= 3;\n  \n  // 计算各种相似度\n  const levenScore = levenshteinSimilarity(inputNorm, targetNorm);\n  const jaroScore = jaroWinklerSimilarity(inputNorm, targetNorm);\n  const containsScore = containsMatch(input, target);\n  const brandModelScore = brandModelMatch(input, target);\n  \n  // 加权综合评分\n  const weights = {\n    levenshtein: 0.25,\n    jaroWinkler: 0.25,\n    contains: 0.30,\n    brandModel: 0.20\n  };\n  \n  let finalScore = \n    levenScore * weights.levenshtein +\n    jaroScore * weights.jaroWinkler +\n    containsScore * weights.contains +\n    brandModelScore * weights.brandModel;\n  \n  // 🔥 完整包含加成：直接提升到85%以上\n  if (isFullyContained) {\n    finalScore = Math.max(finalScore, 0.88);\n  }\n  \n  return {\n    finalScore: finalScore,\n    details: {\n      levenshtein: levenScore.toFixed(3),\n      jaroWinkler: jaroScore.toFixed(3),\n      contains: containsScore.toFixed(3),\n      brandModel: brandModelScore.toFixed(3)\n    }\n  };\n}\n\n// ===== 执行匹配 =====\nconst matches = [];\n\nfor (const car of allCars) {\n  const carName = car.json.carName || '';\n  const carID = car.json.carID;\n  const brandID = car.json.brandID;\n  \n  if (!carName || !carID) continue;\n  \n  const scoreResult = calculateComprehensiveScore(inputCarName, carName);\n  \n  matches.push({\n    carName: carName,\n    carID: carID,\n    brandID: brandID,\n    vehicleClass: car.json.vehicleClass,\n    priceRange: car.json.carPriceRange,\n    score: scoreResult.finalScore,\n    scoreDetails: scoreResult.details\n  });\n}\n\n// 按分数排序\nmatches.sort((a, b) => b.score - a.score);\n\n// 输出前5个匹配结果\nconsole.log(`\\n前5个匹配结果:`);\nmatches.slice(0, 5).forEach((match, index) => {\n  console.log(`${index + 1}. ${match.carName} - 相似度: ${(match.score * 100).toFixed(1)}%`);\n  console.log(`   详情: L=${match.scoreDetails.levenshtein}, J=${match.scoreDetails.jaroWinkler}, C=${match.scoreDetails.contains}, B=${match.scoreDetails.brandModel}`);\n});\n\nconst bestMatch = matches[0];\n\nif (bestMatch && bestMatch.score >= MATCH_THRESHOLD) {\n  console.log(`\\n✅ 匹配成功！`);\n  console.log(`输入: ${inputCarName}`);\n  console.log(`匹配: ${bestMatch.carName}`);\n  console.log(`相似度: ${(bestMatch.score * 100).toFixed(1)}%`);\n  console.log(`carID: ${bestMatch.carID}`);\n  console.log(`========================\\n`);\n  \n  return {\n    json: {\n      needsSearch: false,\n      resolved: true,\n      carId: bestMatch.carID,\n      carName: bestMatch.carName,\n      brandID: bestMatch.brandID,\n      matchType: 'googlesheet_fuzzy_match',\n      similarityScore: bestMatch.score,\n      matchDetails: bestMatch.scoreDetails,\n      inputCarName: inputCarName\n    }\n  };\n}\n\nconsole.log(`\\n⚠️ 未找到满足阈值的匹配，降级到SerpAPI搜索`);\nconsole.log(`最佳匹配: ${bestMatch?.carName || 'N/A'} - 相似度: ${bestMatch ? (bestMatch.score * 100).toFixed(1) : '0'}%`);\nconsole.log(`阈值要求: ${(MATCH_THRESHOLD * 100).toFixed(0)}%`);\nconsole.log(`========================\\n`);\n\nreturn {\n  json: {\n    needsSearch: true,\n    carName: inputCarName,\n    matchType: 'low_similarity',\n    bestMatchScore: bestMatch?.score || 0,\n    bestMatchName: bestMatch?.carName || null\n  }\n};"
+      },
+      "id": "6d42760c-b31b-444f-b0b8-6712db525b10",
+      "name": "模糊匹配分析",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4352,
+        3248
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "series_name",
+              "value": "={{ $json.body && $json.body.carName ? $json.body.carName : $json.carName }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "531773ab-98fd-4c00-ac9f-23dd7318438a",
+      "name": "提取车型名称1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        3680,
+        3248
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 准备查询 - 只需要车型名称\nconst carName = ($input.first().json.series_name || '').trim();\n\nif (!carName) {\n  return {\n    json: {\n      success: false,\n      error: '请提供车型名称',\n      code: 'CAR_NAME_REQUIRED'\n    }\n  };\n}\n\nconsole.log(`准备查询车型: ${carName}`);\n\nreturn {\n  json: {\n    carName: carName\n  }\n};"
+      },
+      "id": "945d2165-7907-4d71-9536-20390aeb41d8",
+      "name": "准备查询2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3920,
+        3248
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.needsSearch }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "a664244a-6d44-444e-87fc-493c707b5521",
+      "name": "检查是否需要搜索2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        4592,
+        3248
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://serpapi.com/search.json?engine=google&q=site:autohome.com.cn+{{ $json.carName }}&api_key=c6805b62d6f0757df69b7b0f41e27570c6b8989caec90d8356e455cf76794514",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": true,
+              "maxRedirects": 5
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "394b510d-6a6c-4b62-b852-56959a106665",
+      "name": "搜索车型2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        4832,
+        3168
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 从IF节点传递过来的数据中获取carName\nconst carName = $('检查是否需要搜索2').first().json.carName;\nconst response = $input.item.json;\n\nconsole.log('===== SerpAPI响应 =====');\nconsole.log('车型名称:', carName);\nconsole.log('SerpAPI响应:', JSON.stringify(response, null, 2));\n\nconst organicResults = response.organic_results || [];\nconsole.log('找到', organicResults.length, '个搜索结果');\n\nlet carId = null;\n\n// 遍历搜索结果\nfor (const result of organicResults) {\n  const link = result.link || '';\n  console.log('检查链接:', link);\n  \n  // 🔥 修改正则：支持2-5位数的carID\n  const patterns = [\n    /autohome\\.com\\.cn\\/(\\d{2,5})\\/?/,           // 改这里：2-5位\n    /series-(\\d{2,5})\\.html/,                    // 改这里：2-5位\n    /config\\/series\\/(\\d{2,5})/                  // 改这里：2-5位\n  ];\n  \n  for (const pattern of patterns) {\n    const match = link.match(pattern);\n    if (match && match[1]) {\n      carId = match[1];\n      console.log('✅ 找到carId:', carId);\n      break;\n    }\n  }\n  \n  if (carId) break;\n}\n\n// 🔥 验证carID格式：改成2-5位\nif (carId && /^\\d{2,5}$/.test(carId)) {\n  console.log('✅ 成功提取carId:', carId);\n  return {\n    json: {\n      carId: carId,\n      carName: carName,\n      matchType: 'serpapi_search',\n      resolved: true\n    }\n  };\n}\n\nconsole.log('❌ 未能从搜索结果中提取carId');\nreturn {\n  json: {\n    success: false,\n    error: '未能从搜索结果中提取carId',\n    code: 'EXTRACTION_FAILED',\n    carName: carName,\n    debug: {\n      resultsCount: organicResults.length,\n      firstResult: organicResults[0]?.link || 'none'\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5072,
+        3168
+      ],
+      "id": "63fd9186-9b90-4292-a244-86fb4fe9aeaf",
+      "name": "处理SerpAPI响应2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 生成所有分类的任务\nconst data = $input.item.json;\n\nif (data.success === false || !data.resolved) {\n  return { json: data };\n}\n\nconst carId = data.carId;\nconst carName = data.carName || '';\nconst brandID = data.brandID || '';\n\nif (!carId || !/^\\d+$/.test(carId.toString())) {\n  return {\n    json: {\n      success: false,\n      error: 'carId格式无效',\n      code: 'INVALID_CAR_ID'\n    }\n  };\n}\n\n// 定义所有要爬取的分类\nconst categories = [\n  { code: '1', name: '外观' },\n  { code: '10', name: '内饰' },\n  { code: '3', name: '座椅' }\n];\n\nconsole.log(`为车型 ${carName} (ID: ${carId}) 生成 ${categories.length} 个爬取任务`);\n\n// 为每个分类生成一个任务\nreturn categories.map(category => ({\n  json: {\n    carId: carId,\n    carName: carName,\n    brandID: brandID,\n    categoryCode: category.code,\n    categoryName: category.name,\n    matchType: data.matchType\n  }\n}));"
+      },
+      "id": "f78d8be0-d456-4a12-a5f8-8080f501b729",
+      "name": "生成所有分类任务1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5344,
+        3264
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://car.autohome.com.cn/pic/series/' + $json.carId + '-' + $json.categoryCode + '.html' }}",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": true,
+              "maxRedirects": 3
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "ae74d8a9-763f-4a11-bf4b-70b7bc59e782",
+      "name": "爬取目标页面2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        5568,
+        3264
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// 从当前输入获取category信息\nconst currentInput = $input.item.json;\n\n// 尝试从生成所有分类任务节点获取参数（带错误处理）\nlet params;\ntry {\n  params = $('生成所有分类任务1').item.json;\n} catch (e) {\n  console.log('警告: 无法从生成所有分类任务1获取数据，尝试从当前输入获取');\n  params = currentInput;\n}\n\nconst carName = params.carName || currentInput.carName || '';\nconst categoryName = params.categoryName || currentInput.categoryName || '';\nconst carId = params.carId || currentInput.carId || '';\nconst categoryCode = params.categoryCode || currentInput.categoryCode || '';\nconst matchType = params.matchType || currentInput.matchType || '';\n\nconsole.log(`处理分类: ${categoryName} (code: ${categoryCode})`);\n\nif ($input.item.json.error) {\n  return {\n    json: {\n      success: false,\n      error: '页面获取失败',\n      message: $input.item.json.error.message || '网络请求错误',\n      code: 'HTTP_REQUEST_FAILED',\n      carId: carId,\n      carName: carName,\n      categoryName: categoryName\n    }\n  };\n}\n\n// 提取HTML内容\nlet html = '';\n\ntry {\n  if ($input.item.binary && $input.item.binary.data) {\n    const binaryData = $input.item.binary.data;\n    if (Buffer.isBuffer(binaryData)) {\n      html = binaryData.toString('latin1');\n    } else if (binaryData.data) {\n      html = Buffer.from(binaryData.data).toString('latin1');\n    }\n  } \n  \n  if (!html || html.length < 100) {\n    html = String($input.item.json.data || $input.item.json.body || '');\n  }\n} catch (error) {\n  html = String($input.item.json.data || $input.item.json.body || '');\n}\n\nif (html.length < 1000) {\n  return {\n    json: {\n      success: false,\n      error: '页面内容异常',\n      code: 'INVALID_PAGE_CONTENT',\n      carId: carId,\n      carName: carName,\n      categoryName: categoryName\n    }\n  };\n}\n\nfunction extractImages(htmlContent, maxImages = 30) {\n  const images = [];\n  const seenUrls = new Set();\n  \n  const patterns = [\n    /data-webp\\s*=\\s*[\"']([^\"']+)[\"']/gi,\n    /data-original\\s*=\\s*[\"']([^\"']+)[\"']/gi,\n    /src\\s*=\\s*[\"'](https?:\\/\\/[^\"']*(?:autoimg\\.cn|autohome\\.com\\.cn)[^\"']*)[\"']/gi\n  ];\n  \n  for (const pattern of patterns) {\n    let match;\n    while ((match = pattern.exec(htmlContent)) !== null && images.length < maxImages) {\n      let url = match[1];\n      \n      if (!url || url.length > 500 || seenUrls.has(url)) continue;\n      \n      if (url.startsWith('//')) {\n        url = 'https:' + url;\n      } else if (!url.startsWith('http')) {\n        continue;\n      }\n      \n      if ((url.includes('autoimg.cn') || url.includes('autohome.com.cn')) && \n          !url.includes('base64') &&\n          (url.includes('/cardfs/') || url.includes('/product/') || url.includes('.jpg') || url.includes('.webp'))) {\n        \n        seenUrls.add(url);\n        images.push({\n          url: url,\n          type: url.includes('data-webp') ? 'high_quality' : 'standard',\n          category: categoryName,\n          carName: carName\n        });\n      }\n    }\n  }\n  \n  return images;\n}\n\nconst images = extractImages(html);\n\nconsole.log(`${categoryName}: 提取到 ${images.length} 张图片`);\n\nreturn {\n  json: {\n    success: images.length > 0,\n    carId: carId,\n    carName: carName,\n    category: categoryName,\n    categoryCode: categoryCode,\n    matchType: matchType,\n    totalImages: images.length,\n    images: images\n  }\n};"
+      },
+      "id": "7b64fbaa-4369-4372-929e-67517263a14b",
+      "name": "提取图片1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5808,
+        3264
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 合并所有分类的图片结果\nconst allResults = $input.all();\n\nlet allImages = [];\nlet successCount = 0;\nlet totalCount = 0;\nlet carId = null;\nlet carName = null;\nlet matchType = null;\n\nconst categorySummary = {};\n\nfor (const result of allResults) {\n  const data = result.json;\n  \n  if (!carId) carId = data.carId;\n  if (!carName) carName = data.carName;\n  if (!matchType) matchType = data.matchType;\n  \n  totalCount++;\n  \n  if (data.success && data.images && data.images.length > 0) {\n    successCount++;\n    allImages = allImages.concat(data.images);\n    categorySummary[data.category] = data.images.length;\n    console.log(`${data.category}: ${data.images.length} 张图片`);\n  } else {\n    categorySummary[data.category] = 0;\n    console.log(`${data.category}: 获取失败`);\n  }\n}\n\nconsole.log(`\\n=== 汇总 ===`);\nconsole.log(`总计: ${allImages.length} 张图片`);\nconsole.log(`成功分类: ${successCount}/${totalCount}`);\nconsole.log(`详细统计:`, categorySummary);\n\nreturn {\n  json: {\n    success: allImages.length > 0,\n    carId: carId,\n    carName: carName,\n    matchType: matchType,\n    totalImages: allImages.length,\n    images: allImages,\n    categorySummary: categorySummary,\n    message: allImages.length > 0 ? `成功获取${allImages.length}张图片（${successCount}个分类）` : '未找到任何图片',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "cf4c15da-b308-41f0-9e0c-0ba5d2caea9d",
+      "name": "合并所有结果1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6048,
+        3264
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "239bd5d7-b366-4eff-93f1-4eec9410f199",
+      "name": "返回响应2",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        6288,
+        3264
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "get-all-car-images",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "id": "4a044d15-dd65-479a-a3d8-c610832807fb",
+      "name": "直接搜索",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        3472,
+        3248
+      ],
+      "webhookId": "get-all-car-images"
+    }
+  ],
+  "connections": {
+    "读取Google Sheet2": {
+      "main": [
+        [
+          {
+            "node": "模糊匹配分析",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "模糊匹配分析": {
+      "main": [
+        [
+          {
+            "node": "检查是否需要搜索2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "提取车型名称1": {
+      "main": [
+        [
+          {
+            "node": "准备查询2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备查询2": {
+      "main": [
+        [
+          {
+            "node": "读取Google Sheet2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "检查是否需要搜索2": {
+      "main": [
+        [
+          {
+            "node": "搜索车型2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "生成所有分类任务1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "搜索车型2": {
+      "main": [
+        [
+          {
+            "node": "处理SerpAPI响应2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "处理SerpAPI响应2": {
+      "main": [
+        [
+          {
+            "node": "生成所有分类任务1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "生成所有分类任务1": {
+      "main": [
+        [
+          {
+            "node": "爬取目标页面2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "爬取目标页面2": {
+      "main": [
+        [
+          {
+            "node": "提取图片1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "提取图片1": {
+      "main": [
+        [
+          {
+            "node": "合并所有结果1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "合并所有结果1": {
+      "main": [
+        [
+          {
+            "node": "返回响应2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "直接搜索": {
+      "main": [
+        [
+          {
+            "node": "提取车型名称1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5cb72472896fce0666bc03ef84936c4f09ec11e6b4f95f9aebe3d538947c7935"
+  }
+}

@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汽车详情查询</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* 配置面板 */
+        .config-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .config-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .config-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .config-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .config-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .save-config-btn {
+            padding: 10px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .save-config-btn:hover {
+            background: #5568d3;
+        }
+
+        .config-status {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #28a745;
+        }
+
+        .config-help {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* 搜索区域 */
+        .search-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 42px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .page-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 15px;
+            max-width: 700px;
+            margin: 0 auto 25px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 16px 25px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-btn {
+            padding: 16px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .hot-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .hot-tag {
+            padding: 6px 16px;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .hot-tag:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        /* 详情页面 */
+        .detail-section {
+            display: none;
+        }
+
+        .detail-section.active {
+            display: block;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: white;
+            border: none;
+            color: #667eea;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .back-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(-5px);
+        }
+
+        .detail-header {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .detail-title {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .main-image-section {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .main-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .favorite-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.95);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+        }
+
+        .favorite-btn:hover {
+            transform: scale(1.1);
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .ai-analysis {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 2px solid #ff6b6b;
+        }
+
+        .ai-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .ai-title {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .official-link {
+            padding: 8px 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 13px;
+            transition: transform 0.2s;
+        }
+
+        .official-link:hover {
+            transform: translateY(-2px);
+        }
+
+        .car-type-price {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .related-cars-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .related-car-card {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .related-car-card:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .detail-images-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .image-card {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .image-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .image-category {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        /* 加载状态 */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 图片查看器 */
+        .image-viewer {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .image-viewer.active {
+            display: flex;
+        }
+
+        .viewer-content {
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .viewer-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .search-box {
+                flex-direction: column;
+            }
+
+            .related-cars-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .config-input-group {
+                flex-direction: column;
+            }
+
+            .save-config-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 配置面板 -->
+        <div class="config-panel">
+            <div class="config-title">
+                ⚙️ Webhook配置
+            </div>
+            <div class="config-input-group">
+                <input 
+                    type="text" 
+                    class="config-input" 
+                    id="webhookUrl" 
+                    placeholder="输入你的N8N webhook地址，例如: https://n8n.seanhe.tech/webhook/car-detail-complete"
+                    value="https://n8n.seanhe.tech/webhook/car-detail-complete"
+                />
+                <button class="save-config-btn" onclick="saveWebhookConfig()">保存配置</button>
+            </div>
+            <div class="config-status" id="configStatus"></div>
+            <div class="config-help">💡 提示：在N8N中激活工作流后，复制webhook地址粘贴到这里</div>
+        </div>
+
+        <!-- 搜索区域 -->
+        <div class="search-section" id="searchSection">
+            <h1 class="page-title">🚗 汽车详情查询</h1>
+            <p class="page-subtitle">输入汽车名称，查看完整信息</p>
+            
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="searchInput" 
+                    placeholder="例如：比亚迪海豹、腾势N7..."
+                    onkeypress="handleEnterKey(event)"
+                />
+                <button class="search-btn" id="searchBtn" onclick="searchCar()">
+                    查询详情
+                </button>
+            </div>
+
+            <div class="hot-tags">
+                <span class="hot-tag" onclick="quickSearch('比亚迪海豹')">比亚迪海豹</span>
+                <span class="hot-tag" onclick="quickSearch('腾势N7')">腾势N7</span>
+                <span class="hot-tag" onclick="quickSearch('比亚迪汉')">比亚迪汉</span>
+                <span class="hot-tag" onclick="quickSearch('小鹏P7')">小鹏P7</span>
+                <span class="hot-tag" onclick="quickSearch('蔚来ET5')">蔚来ET5</span>
+                <span class="hot-tag" onclick="quickSearch('问界M7')">问界M7</span>
+            </div>
+        </div>
+
+        <!-- 加载状态 -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>正在加载中...</p>
+        </div>
+
+        <!-- 详情页面 -->
+        <div class="detail-section" id="detailSection">
+            <button class="back-btn" onclick="backToSearch()">
+                ← 返回搜索
+            </button>
+
+            <div class="detail-header">
+                <h1 class="detail-title" id="detailTitle"></h1>
+            </div>
+
+            <div class="main-content">
+                <div class="main-image-section">
+                    <button class="favorite-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                    </button>
+                    <img id="mainImage" class="main-image" alt="汽车主图">
+                </div>
+
+                <div class="ai-analysis">
+                    <div class="ai-header">
+                        <h2 class="ai-title">AI分析</h2>
+                        <a href="#" class="official-link" id="officialLink" target="_blank">跳转官网</a>
+                    </div>
+
+                    <div class="car-type-price">
+                        <span id="carType">Sedan</span>
+                        <span class="car-price" id="carPrice">$0.00</span>
+                    </div>
+
+                    <div class="ai-description" id="aiDescription" style="padding: 15px; background: #f8f9fa; border-radius: 10px; margin-bottom: 20px; font-size: 14px; line-height: 1.8; color: #555; border-left: 4px solid #667eea;">
+                        AI分析加载中...
+                    </div>
+
+                    <div class="section-title">相关车型</div>
+                    <div class="related-cars-grid" id="relatedCars"></div>
+                </div>
+            </div>
+
+            <div class="detail-images-section">
+                <h2 class="section-title" style="font-size: 24px; margin-bottom: 20px;">详细图片</h2>
+                <div class="images-grid" id="detailImages"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片查看器 -->
+    <div class="image-viewer" id="imageViewer" onclick="closeViewer()">
+        <button class="viewer-close">&times;</button>
+        <img class="viewer-content" id="viewerImage" alt="查看图片">
+    </div>
+
+    <script>
+        // ==================== 配置管理 ====================
+        let WEBHOOK_URL = localStorage.getItem('webhookUrl') || 'https://n8n.seanhe.tech/webhook/car-detail-complete';
+
+        // 页面加载时显示已保存的配置
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('webhookUrl').value = WEBHOOK_URL;
+            if (WEBHOOK_URL) {
+                document.getElementById('configStatus').textContent = '✓ 已配置';
+            }
+            document.getElementById('searchInput').focus();
+        });
+
+        // 保存webhook配置
+        function saveWebhookConfig() {
+            const url = document.getElementById('webhookUrl').value.trim();
+            if (!url) {
+                alert('请输入webhook地址');
+                return;
+            }
+            
+            if (!url.startsWith('http')) {
+                alert('请输入有效的URL地址');
+                return;
+            }
+
+            WEBHOOK_URL = url;
+            localStorage.setItem('webhookUrl', url);
+            document.getElementById('configStatus').textContent = '✓ 配置已保存';
+            
+            setTimeout(() => {
+                document.getElementById('configStatus').textContent = '✓ 已配置';
+            }, 2000);
+        }
+
+        // ==================== 搜索功能 ====================
+        function handleEnterKey(event) {
+            if (event.key === 'Enter') {
+                searchCar();
+            }
+        }
+
+        function quickSearch(keyword) {
+            document.getElementById('searchInput').value = keyword;
+            searchCar();
+        }
+
+        async function searchCar() {
+            const carName = document.getElementById('searchInput').value.trim();
+            
+            if (!carName) {
+                alert('请输入汽车名称');
+                return;
+            }
+
+            if (!WEBHOOK_URL) {
+                alert('请先配置Webhook地址');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                console.log('查询车型:', carName);
+                console.log('使用API:', WEBHOOK_URL);
+
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ carName: carName })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP错误: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('API响应:', result);
+
+                if (!result.success) {
+                    throw new Error(result.error || '查询失败');
+                }
+
+                displayCarDetail(result.data);
+
+            } catch (error) {
+                console.error('查询错误:', error);
+                hideLoading();
+                alert('查询失败: ' + error.message);
+            }
+        }
+
+        // ==================== 详情展示 ====================
+        function displayCarDetail(data) {
+            hideLoading();
+
+            // 切换到详情页面
+            document.getElementById('searchSection').style.display = 'none';
+            document.getElementById('detailSection').classList.add('active');
+
+            // 基本信息
+            document.getElementById('detailTitle').textContent = data.carName;
+            document.getElementById('mainImage').src = data.mainImageUrl || '';
+            
+            const vehicleEn = data.vehicleClass ? data.vehicleClass.match(/[A-Z][a-z]+/)?.[0] || 'Sedan' : 'Sedan';
+            document.getElementById('carType').textContent = vehicleEn;
+            document.getElementById('carPrice').textContent = data.carPriceRange || '价格待定';
+            
+            const officialLink = document.getElementById('officialLink');
+            if (data.carID) {
+                officialLink.href = `https://www.autohome.com.cn/${data.carID}/`;
+            }
+
+            // AI分析内容
+            const aiDescription = document.getElementById('aiDescription');
+            if (data.aiAnalysis) {
+                aiDescription.textContent = data.aiAnalysis;
+            } else {
+                aiDescription.textContent = '暂无AI分析';
+            }
+
+            // 相关车型
+            const relatedCarsContainer = document.getElementById('relatedCars');
+            relatedCarsContainer.innerHTML = '';
+            
+            if (data.relatedCars && data.relatedCars.length > 0) {
+                data.relatedCars.forEach(car => {
+                    const card = document.createElement('div');
+                    card.className = 'related-car-card';
+                    card.onclick = () => {
+                        document.getElementById('searchInput').value = car.carName;
+                        searchCar();
+                    };
+                    card.innerHTML = `
+                        <div style="font-weight: 600; margin-bottom: 5px;">${car.carName}</div>
+                        <div style="font-size: 12px; opacity: 0.8;">${car.carPriceRange || '价格待定'}</div>
+                    `;
+                    relatedCarsContainer.appendChild(card);
+                });
+            } else {
+                relatedCarsContainer.innerHTML = '<p style="color: #999; padding: 15px;">暂无相关车型</p>';
+            }
+
+            // 详细图片
+            const detailImagesContainer = document.getElementById('detailImages');
+            detailImagesContainer.innerHTML = '';
+
+            if (data.detailImages && data.detailImages.length > 0) {
+                data.detailImages.forEach(image => {
+                    const card = document.createElement('div');
+                    card.className = 'image-card';
+                    card.onclick = () => openViewer(image.url);
+                    
+                    card.innerHTML = `
+                        <img src="${image.url}" alt="${image.category || '汽车图片'}" loading="lazy">
+                        <div class="image-category">${image.category || '外观'}</div>
+                    `;
+                    
+                    detailImagesContainer.appendChild(card);
+                });
+            } else {
+                detailImagesContainer.innerHTML = '<p style="color: #999; padding: 20px;">暂无详细图片</p>';
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function backToSearch() {
+            document.getElementById('searchSection').style.display = 'block';
+            document.getElementById('detailSection').classList.remove('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ==================== 图片查看器 ====================
+        function openViewer(imageUrl) {
+            document.getElementById('viewerImage').src = imageUrl;
+            document.getElementById('imageViewer').classList.add('active');
+        }
+
+        function closeViewer() {
+            document.getElementById('imageViewer').classList.remove('active');
+        }
+
+        document.getElementById('viewerImage').addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // ==================== 加载状态 ====================
+        function showLoading() {
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('searchBtn').disabled = true;
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('active');
+            document.getElementById('searchBtn').disabled = false;
+        }
+    </script>
+</body>
+</html>

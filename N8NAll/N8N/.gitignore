@@ -1,0 +1,14 @@
+# 敏感数据
+*.env
+.env.local
+secrets/
+
+# 临时文件
+*.tmp
+*.log
+.DS_Store
+
+# 备份文件
+*.backup
+*.bak
+

@@ -1,0 +1,404 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2027336631,
+          "mode": "list",
+          "cachedResultName": "NewallCarMappingMVP用",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=2027336631"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3648,
+        816
+      ],
+      "id": "b880d32d-7a12-4c0f-9fb2-3db56992fede",
+      "name": "读取车型数据",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        4016,
+        816
+      ],
+      "id": "d8d4cfc4-ea8c-416d-9ebb-753ce85c62fb",
+      "name": "循环处理车型"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "car-id-assign",
+              "name": "carID",
+              "value": "={{ $json.series_id }}",
+              "type": "string"
+            },
+            {
+              "id": "series-name-assign",
+              "name": "series_name",
+              "value": "={{ $json.series_name }}",
+              "type": "string"
+            },
+            {
+              "id": "price-range-assign",
+              "name": "price_range",
+              "value": "={{ $json.price_range }}",
+              "type": "string"
+            },
+            {
+              "id": "vehicle-class-assign",
+              "name": "vehicle_class",
+              "value": "={{ $json.vehicle_class }}",
+              "type": "string"
+            },
+            {
+              "id": "brand-id-assign",
+              "name": "brand_id",
+              "value": "={{ $json.brand_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4208,
+        864
+      ],
+      "id": "30df533f-62d3-4716-8eec-6497a85eb6fb",
+      "name": "提取车型信息"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.autohome.com.cn/cars/imglist-x-x-{{ $json.carID }}-x-x-x-x-x-x-1.html",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "timeout": 15000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4416,
+        864
+      ],
+      "id": "957afae5-efae-4da8-9f32-8aeec792c0a6",
+      "name": "请求图片页面",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4608,
+        864
+      ],
+      "id": "13e3a3f9-7d6c-4d2e-8dbd-8228cff55073",
+      "name": "请求延迟",
+      "webhookId": "wait-webhook-img"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code Node - 提取外观、内饰、座椅图片并合并车型信息\n\n// 获取输入数据\nconst inputData = $input.first().json;\n\n// 从上游节点获取车型信息\nconst carInfo = {\n  series_id: $('提取车型信息').item.json.carID,\n  series_name: $('提取车型信息').item.json.series_name,\n  price_range: $('提取车型信息').item.json.price_range,\n  vehicle_class: $('提取车型信息').item.json.vehicle_class,\n  brand_id: $('提取车型信息').item.json.brand_id\n};\n\nconsole.log('处理车型:', carInfo.series_name, '(ID:', carInfo.series_id, ')');\n\n// 获取HTML内容\nlet htmlContent = '';\nif (inputData.data) {\n  htmlContent = inputData.data;\n} else if (typeof inputData === 'string') {\n  htmlContent = inputData;\n} else {\n  console.log('无法找到HTML内容');\n  return [{ json: { ...carInfo, error: '数据格式错误' } }];\n}\n\nconsole.log('HTML长度:', htmlContent.length);\n\n// 查找 __NEXT_DATA__ script标签\nconst scriptMatch = htmlContent.match(/<script id=\"__NEXT_DATA__\"[^>]*>(.*?)<\\/script>/);\n\nif (!scriptMatch) {\n  console.log('未找到__NEXT_DATA__标签');\n  return [{ json: { ...carInfo, error: '未找到JSON数据' } }];\n}\n\ntry {\n  // 解析JSON数据\n  const jsonData = JSON.parse(scriptMatch[1]);\n  console.log('成功解析JSON数据');\n  \n  // 获取图片信息\n  const picinfo = jsonData.props?.pageProps?.SeriesPicList?.picinfo;\n  \n  if (!picinfo || !picinfo.callist) {\n    console.log('未找到图片分类列表');\n    return [{ json: { ...carInfo, error: '未找到图片分类' } }];\n  }\n  \n  console.log('找到图片分类列表，数量:', picinfo.callist.length);\n  \n  const imageList = [];\n  \n  // ========== 1. 提取外观图片 ==========\n  const waiGuanClass = picinfo.callist.find(item => item.name === '外观');\n  \n  if (waiGuanClass && waiGuanClass.list && waiGuanClass.list.length > 0) {\n    console.log('外观图片总数:', waiGuanClass.list.length);\n    \n    const waiGuanViewTypes = ['view45', 'viewFront', 'view-45', 'viewSide'];\n    const waiGuanCount = Math.min(4, waiGuanClass.list.length);\n    \n    for (let i = 0; i < waiGuanCount; i++) {\n      const pic = waiGuanClass.list[i];\n      \n      imageList.push({\n        ...carInfo,  // 包含车型信息\n        image_url: pic.picpath,\n        image_index: i + 1,\n        category: '外观',\n        view_type: waiGuanViewTypes[i],\n        pic_id: pic.picid,\n        spec_id: pic.specid\n      });\n      \n      console.log(`外观图片 ${i + 1} [${waiGuanViewTypes[i]}]: ${pic.picpath}`);\n    }\n  }\n  \n  // ========== 2. 提取内饰图片 ==========\n  const neiShiClass = picinfo.callist.find(item => item.name === '内饰');\n  \n  if (neiShiClass && neiShiClass.list && neiShiClass.list.length > 0) {\n    console.log('内饰图片总数:', neiShiClass.list.length);\n    \n    const neiShiIndexes = [0, 5];\n    const neiShiViewTypes = ['viewCNSL', 'viewIP'];\n    \n    for (let i = 0; i < neiShiIndexes.length; i++) {\n      const index = neiShiIndexes[i];\n      \n      if (index < neiShiClass.list.length) {\n        const pic = neiShiClass.list[index];\n        \n        imageList.push({\n          ...carInfo,  // 包含车型信息\n          image_url: pic.picpath,\n          image_index: 4 + i + 1,  // 接续外观图片的编号\n          category: '内饰',\n          view_type: neiShiViewTypes[i],\n          pic_id: pic.picid,\n          spec_id: pic.specid\n        });\n        \n        console.log(`内饰图片 ${index + 1} [${neiShiViewTypes[i]}]: ${pic.picpath}`);\n      }\n    }\n  }\n  \n  // ========== 3. 提取座椅图片 ==========\n  const zuoYiClass = picinfo.callist.find(item => item.name === '座椅');\n  \n  if (zuoYiClass && zuoYiClass.list && zuoYiClass.list.length > 0) {\n    console.log('座椅图片总数:', zuoYiClass.list.length);\n    \n    const zuoYiIndex = 2;\n    \n    if (zuoYiIndex < zuoYiClass.list.length) {\n      const pic = zuoYiClass.list[zuoYiIndex];\n      \n      imageList.push({\n        ...carInfo,  // 包含车型信息\n        image_url: pic.picpath,\n        image_index: 7,  // 第7张图片\n        category: '座椅',\n        view_type: 'viewDoor',\n        pic_id: pic.picid,\n        spec_id: pic.specid\n      });\n      \n      console.log(`座椅图片 ${zuoYiIndex + 1} [viewDoor]: ${pic.picpath}`);\n    }\n  }\n  \n  if (imageList.length === 0) {\n    console.log('未找到任何图片');\n    return [{ json: { ...carInfo, error: '未找到图片' } }];\n  }\n  \n  console.log(`成功提取 ${imageList.length} 张图片`);\n  \n  // 返回结果\n  return imageList.map(img => ({ json: img }));\n  \n} catch (error) {\n  console.log('解析JSON出错:', error.message);\n  return [{ json: { ...carInfo, error: 'JSON解析失败: ' + error.message } }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4816,
+        864
+      ],
+      "id": "6aa0fb2f-25cc-462c-b5ad-88d3907edd99",
+      "name": "提取图片并合并信息",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5008,
+        864
+      ],
+      "id": "a359cca7-82b0-4f1f-a5a8-4ef8b81a728e",
+      "name": "处理延迟",
+      "webhookId": "wait-webhook-process"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1550254241,
+          "mode": "list",
+          "cachedResultName": "CarImageURLMVP用",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=1550254241"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "series_id",
+              "displayName": "series_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "series_name",
+              "displayName": "series_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "price_range",
+              "displayName": "price_range",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "vehicle_class",
+              "displayName": "vehicle_class",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "brand_id",
+              "displayName": "brand_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_url",
+              "displayName": "image_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_index",
+              "displayName": "image_index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "view_type",
+              "displayName": "view_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "pic_id",
+              "displayName": "pic_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "spec_id",
+              "displayName": "spec_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        5008,
+        752
+      ],
+      "id": "0759423a-dfdd-405d-87da-3bfa4d0e93fa",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "读取车型数据": {
+      "main": [
+        []
+      ]
+    },
+    "循环处理车型": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "提取车型信息",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "提取车型信息": {
+      "main": [
+        [
+          {
+            "node": "请求图片页面",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "请求图片页面": {
+      "main": [
+        [
+          {
+            "node": "请求延迟",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "请求延迟": {
+      "main": [
+        [
+          {
+            "node": "提取图片并合并信息",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "提取图片并合并信息": {
+      "main": [
+        [
+          {
+            "node": "处理延迟",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "处理延迟": {
+      "main": [
+        [
+          {
+            "node": "循环处理车型",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5cb72472896fce0666bc03ef84936c4f09ec11e6b4f95f9aebe3d538947c7935"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "parameters": {
+    "jsCode": "const data = $input.item.json.data;\nconst content = data.content || '';\nconst conversationHistory = data.conversationHistory || '';  // ⭐ 新增\nconst dialogueID = data.dialogueID || 'dlg_' + Date.now();\nconst userID = data.userID || 'testCode';\nconst isNewDialogue = !data.dialogueID;\n\nconst keywords = ['外观','内饰','性能','续航','空间','配置','智能化','价格','安全','舒适'];\nconst extractedTags = keywords.filter(k => content.includes(k));\n\nlet title = '';\nif (extractedTags.length > 0) {\n  title = extractedTags.join('、') + '对比分析';\n} else {\n  title = content.slice(0, 20) + (content.length > 20 ? '...' : '');\n}\n\nlet aiReply = '好的，我理解了您的需求。';\nif (extractedTags.length > 0) {\n  aiReply += '我将重点关注' + extractedTags.join('、') + '这些方面。';\n} else {\n  aiReply += '请告诉我您关心的对比维度，比如外观、内饰、性能等。';\n}\n\nconst timestamp = new Date().toISOString();\nconst messageID_user = 'msg_' + Date.now() + '_user';\nconst messageID_ai = 'msg_' + (Date.now() + 1) + '_ai';\n\nreturn {\n  json: {\n    dialogueID: dialogueID,\n    userID: userID,\n    title: title,\n    tags: extractedTags.join(','),\n    createTime: timestamp,\n    status: 'active',\n    isNewDialogue: isNewDialogue,\n    conversationHistory: conversationHistory,  // ⭐ 新增：传递给后续节点\n    userMessage: {\n      messageID: messageID_user,\n      dialogueID: dialogueID,\n      role: 'user',\n      content: content,\n      timestamp: timestamp\n    },\n    aiMessage: {\n      messageID: messageID_ai,\n      dialogueID: dialogueID,\n      role: 'assistant',\n      content: aiReply,\n      timestamp: new Date(Date.now() + 1000).toISOString()\n    },\n    response: {\n      success: true,\n      dialogueID: dialogueID,\n      messageID: messageID_ai,\n      aiReply: aiReply,\n      extractedTags: extractedTags,\n      title: title\n    }\n  }\n};"
+  },
+  "id": "23a4e674-e91c-4c30-b78b-9f680f4711cc",
+  "name": "ProcessMessage",
+  "type": "n8n-nodes-base.code",
+  "typeVersion": 2,
+  "position": [
+    4208,
+    6240
+  ]
+}
+

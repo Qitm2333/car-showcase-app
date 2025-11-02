@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI车型分析助手 - 调试版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 左侧历史记录 */
+        .sidebar {
+            width: 250px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .history-title {
+            padding: 16px 20px;
+            font-size: 12px;
+            color: #999;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 12px;
+        }
+
+        .history-item {
+            padding: 12px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .history-item:hover {
+            background: #f3f4f6;
+        }
+
+        .history-item.active {
+            background: #eef2ff;
+        }
+
+        .history-item-title {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .history-item-tags {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .mini-tag {
+            font-size: 10px;
+            padding: 2px 6px;
+            background: #e0e7ff;
+            color: #4f46e5;
+            border-radius: 4px;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fafafa;
+        }
+
+        .main-header {
+            background: white;
+            padding: 20px 40px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .main-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .new-dialogue-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .new-dialogue-btn:hover {
+            background: #5568d3;
+        }
+
+        /* 对话区域 */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            max-width: 800px;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.assistant .message-avatar {
+            background: #f3f4f6;
+            color: #666;
+        }
+
+        .message-content {
+            background: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            max-width: 600px;
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+        }
+
+        .message-text {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .message-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            border: 1px solid #e5e7eb;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .action-btn.accept {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+
+        .action-btn.accept:hover {
+            background: #059669;
+        }
+
+        .action-btn.reject {
+            color: #666;
+        }
+
+        .action-btn.reject:hover {
+            background: #f3f4f6;
+        }
+
+        /* 报告卡片 */
+        .report-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            max-width: 800px;
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .report-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .report-time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .download-btn {
+            padding: 8px 16px;
+            background: #f3f4f6;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #666;
+            transition: background 0.2s;
+        }
+
+        .download-btn:hover {
+            background: #e5e7eb;
+        }
+
+        /* 输入区域 */
+        .input-container {
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            padding: 20px 40px;
+        }
+
+        .tag-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .tag-btn {
+            padding: 6px 16px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #666;
+        }
+
+        .tag-btn.active {
+            background: #e0e7ff;
+            color: #4f46e5;
+            border-color: #c7d2fe;
+        }
+
+        .tag-btn .remove {
+            margin-left: 6px;
+            font-weight: 600;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .message-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            background: #667eea;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: background 0.2s;
+        }
+
+        .send-btn:hover {
+            background: #5568d3;
+        }
+
+        .send-btn:disabled {
+            background: #e5e7eb;
+            cursor: not-allowed;
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: flex;
+            gap: 4px;
+            padding: 8px 0;
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* 调试面板 */
+        .debug-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            max-width: 400px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .debug-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #10b981;
+        }
+
+        .debug-url {
+            background: #374151;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            word-break: break-all;
+        }
+
+        .debug-log {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #374151;
+        }
+
+        .debug-log-item {
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 左侧历史记录 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-info">
+                    <div class="user-avatar">王</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px;">王先生</div>
+                        <div style="font-size: 12px; color: #999;">testCode</div>
+                    </div>
+                </div>
+            </div>
+            <div class="history-title">历史分析</div>
+            <div class="history-list" id="historyList">
+                <!-- 动态生成 -->
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <div class="main-header">
+                <div class="main-title" id="dialogueTitle">新对话</div>
+                <button class="new-dialogue-btn" onclick="startNewDialogue()">
+                    <span>+</span>
+                    <span>新对话</span>
+                </button>
+            </div>
+
+            <div class="chat-container" id="chatContainer">
+                <!-- 欢迎消息 -->
+                <div class="message assistant">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        <div class="message-text">
+                            👋 你好！我是AI车型分析助手。<br><br>
+                            你可以告诉我你关心的对比维度（如外观、内饰、续航等），我会帮你生成专业的对比报告。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <div class="tag-selector" id="tagSelector">
+                    <button class="tag-btn" data-tag="外观" onclick="toggleTag(this)">外观</button>
+                    <button class="tag-btn" data-tag="内饰" onclick="toggleTag(this)">内饰</button>
+                    <button class="tag-btn" data-tag="性能" onclick="toggleTag(this)">性能</button>
+                    <button class="tag-btn" data-tag="续航" onclick="toggleTag(this)">续航</button>
+                    <button class="tag-btn" data-tag="空间" onclick="toggleTag(this)">空间</button>
+                    <button class="tag-btn" data-tag="配置" onclick="toggleTag(this)">配置</button>
+                    <button class="tag-btn" data-tag="智能化" onclick="toggleTag(this)">智能化</button>
+                </div>
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        class="message-input" 
+                        id="messageInput" 
+                        placeholder="Ask me something..."
+                        onkeypress="handleKeyPress(event)"
+                    >
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">▲</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 调试面板 -->
+    <div class="debug-panel">
+        <div class="debug-title">🔧 调试面板</div>
+        <div class="debug-url" id="webhookUrl">
+            Webhook URL: 设置后显示
+        </div>
+        <label style="display: block; margin-bottom: 8px;">
+            设置Webhook URL:
+            <input 
+                type="text" 
+                id="webhookInput" 
+                placeholder="https://your-n8n.com/webhook/ai-analysis"
+                style="width: 100%; padding: 4px; margin-top: 4px; background: #374151; border: 1px solid #4b5563; color: white; border-radius: 4px;"
+                onchange="updateWebhookUrl()"
+            >
+        </label>
+        <div class="debug-log" id="debugLog">
+            <div>等待操作...</div>
+        </div>
+    </div>
+
+    <script>
+        // ===== 配置 =====
+        let WEBHOOK_URL = '';
+        const USER_ID = 'testCode'; // 测试用户ID
+        let currentDialogueID = null;
+        let selectedTags = [];
+        let dialogueHistory = [];
+
+        // ===== 初始化 =====
+        function init() {
+            // 从localStorage读取配置
+            const savedUrl = localStorage.getItem('webhookUrl');
+            if (savedUrl) {
+                WEBHOOK_URL = savedUrl;
+                document.getElementById('webhookInput').value = savedUrl;
+                document.getElementById('webhookUrl').textContent = 'Webhook URL: ' + savedUrl;
+            }
+            
+            // 加载历史对话
+            loadDialogueList();
+        }
+
+        // ===== 更新Webhook URL =====
+        function updateWebhookUrl() {
+            const input = document.getElementById('webhookInput');
+            WEBHOOK_URL = input.value;
+            localStorage.setItem('webhookUrl', WEBHOOK_URL);
+            document.getElementById('webhookUrl').textContent = 'Webhook URL: ' + WEBHOOK_URL;
+            addDebugLog('✅ Webhook URL已更新');
+        }
+
+        // ===== 标签管理 =====
+        function toggleTag(btn) {
+            const tag = btn.dataset.tag;
+            if (btn.classList.contains('active')) {
+                btn.classList.remove('active');
+                selectedTags = selectedTags.filter(t => t !== tag);
+                btn.innerHTML = tag;
+            } else {
+                btn.classList.add('active');
+                selectedTags.push(tag);
+                btn.innerHTML = tag + ' <span class="remove">×</span>';
+            }
+            addDebugLog(`标签切换: ${selectedTags.join(', ')}`);
+        }
+
+        // ===== 发送消息 =====
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            
+            if (!content) return;
+            if (!WEBHOOK_URL) {
+                alert('请先设置Webhook URL！');
+                return;
+            }
+
+            // 禁用输入
+            input.disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+
+            // 显示用户消息
+            addMessage('user', content);
+            input.value = '';
+
+            // 显示加载动画
+            const loadingId = addLoadingMessage();
+
+            try {
+                // 调用N8N Webhook
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'sendMessage',
+                        userID: USER_ID,
+                        dialogueID: currentDialogueID,
+                        content: content,
+                        tags: selectedTags,
+                        folderIDs: ['folder_demo']
+                    })
+                });
+
+                const data = await response.json();
+                addDebugLog(`✅ 收到响应: ${JSON.stringify(data).substring(0, 100)}...`);
+
+                // 移除加载动画
+                removeLoadingMessage(loadingId);
+
+                // 显示AI回复
+                if (data.success) {
+                    currentDialogueID = data.dialogueID;
+                    addMessage('assistant', data.aiReply, data.extractedTags);
+                    
+                    // 更新标签
+                    if (data.extractedTags && data.extractedTags.length > 0) {
+                        data.extractedTags.forEach(tag => {
+                            const btn = document.querySelector(`[data-tag="${tag}"]`);
+                            if (btn && !btn.classList.contains('active')) {
+                                toggleTag(btn);
+                            }
+                        });
+                    }
+                } else {
+                    addMessage('assistant', '抱歉，出现了错误：' + (data.error || '未知错误'));
+                }
+
+            } catch (error) {
+                removeLoadingMessage(loadingId);
+                addMessage('assistant', '⚠️ 连接失败：' + error.message);
+                addDebugLog(`❌ 错误: ${error.message}`);
+            }
+
+            // 恢复输入
+            input.disabled = false;
+            document.getElementById('sendBtn').disabled = false;
+            input.focus();
+        }
+
+        // ===== 生成报告 =====
+        async function generateReport() {
+            if (!WEBHOOK_URL) {
+                alert('请先设置Webhook URL！');
+                return;
+            }
+
+            if (selectedTags.length === 0) {
+                alert('请至少选择一个对比维度！');
+                return;
+            }
+
+            addDebugLog(`📄 生成报告: ${selectedTags.join(', ')}`);
+
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'generateReport',
+                        userID: USER_ID,
+                        dialogueID: currentDialogueID,
+                        tags: selectedTags,
+                        vehicles: [
+                            { name: '极氪009', image: 'placeholder.jpg' },
+                            { name: '小鹏X9', image: 'placeholder.jpg' },
+                            { name: '腾势D9', image: 'placeholder.jpg' }
+                        ]
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    addReportCard(data.reportID, data.htmlContent);
+                    addDebugLog(`✅ 报告生成成功: ${data.reportID}`);
+                    addDebugLog(`📄 HTML已保存到Google Sheets`);
+                } else {
+                    alert('报告生成失败：' + (data.error || '未知错误'));
+                }
+
+            } catch (error) {
+                alert('连接失败：' + error.message);
+                addDebugLog(`❌ 错误: ${error.message}`);
+            }
+        }
+
+        // ===== UI操作 =====
+        function addMessage(role, text, tags = []) {
+            const container = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            const avatar = role === 'user' ? '王' : 'AI';
+            
+            let tagsHtml = '';
+            if (tags && tags.length > 0) {
+                tagsHtml = '<div style="margin-top: 8px;">' + 
+                    tags.map(t => `<span class="mini-tag">${t}</span>`).join(' ') +
+                    '</div>';
+            }
+
+            let actionsHtml = '';
+            if (role === 'assistant' && selectedTags.length > 0) {
+                actionsHtml = `
+                    <div class="message-actions">
+                        <button class="action-btn accept" onclick="generateReport()">接受此方案</button>
+                        <button class="action-btn reject">继续讨论</button>
+                    </div>
+                `;
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">
+                    <div class="message-text">${text}</div>
+                    ${tagsHtml}
+                    ${actionsHtml}
+                </div>
+            `;
+            
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addLoadingMessage() {
+            const container = document.getElementById('chatContainer');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message assistant';
+            loadingDiv.id = 'loading-' + Date.now();
+            loadingDiv.innerHTML = `
+                <div class="message-avatar">AI</div>
+                <div class="message-content">
+                    <div class="loading">
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(loadingDiv);
+            container.scrollTop = container.scrollHeight;
+            return loadingDiv.id;
+        }
+
+        function removeLoadingMessage(id) {
+            const loading = document.getElementById(id);
+            if (loading) loading.remove();
+        }
+
+        function addReportCard(reportID, htmlContent) {
+            const container = document.getElementById('chatContainer');
+            const reportDiv = document.createElement('div');
+            reportDiv.className = 'report-card';
+            reportDiv.innerHTML = `
+                <div class="report-header">
+                    <div>
+                        <div class="report-title">📊 车型对比报告</div>
+                        <div class="report-time">Created at ${new Date().toLocaleTimeString()}</div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="download-btn" onclick='previewReport(${JSON.stringify(htmlContent)})'>
+                            👁️ 预览报告
+                        </button>
+                        <button class="download-btn" onclick='printReport(${JSON.stringify(htmlContent)})'>
+                            🖨️ 打印/生成PDF
+                        </button>
+                    </div>
+                </div>
+                <div style="margin-top: 12px; padding: 12px; background: #f9fafb; border-radius: 6px; font-size: 12px; color: #666;">
+                    <div><strong>报告ID:</strong> ${reportID}</div>
+                    <div style="margin-top: 4px;"><strong>存储位置:</strong> Google Sheets (仅HTML)</div>
+                    <div style="margin-top: 4px; color: #10b981;">✅ 报告已生成！点击"打印/生成PDF"使用浏览器保存</div>
+                    <div style="margin-top: 6px; color: #667eea; font-size: 11px;">
+                        💡 提示：打印时选择"另存为PDF"即可保存成PDF文件
+                    </div>
+                </div>
+            `;
+            container.appendChild(reportDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        // 预览报告（新窗口打开）
+        function previewReport(htmlContent) {
+            const newWindow = window.open('', '_blank');
+            newWindow.document.write(htmlContent);
+            newWindow.document.close();
+        }
+        
+        // 打印报告（直接触发打印）
+        function printReport(htmlContent) {
+            const newWindow = window.open('', '_blank');
+            newWindow.document.write(htmlContent);
+            newWindow.document.close();
+            
+            // 等待内容加载完成后触发打印
+            newWindow.onload = () => {
+                setTimeout(() => {
+                    newWindow.print();
+                }, 500);
+            };
+        }
+
+        function downloadReport(reportID) {
+            alert('下载功能：reportID = ' + reportID);
+            // 实际应该打开报告预览或下载PDF
+        }
+
+        function addDebugLog(message) {
+            const log = document.getElementById('debugLog');
+            const time = new Date().toLocaleTimeString();
+            const item = document.createElement('div');
+            item.className = 'debug-log-item';
+            item.textContent = `[${time}] ${message}`;
+            log.appendChild(item);
+            
+            // 保持最新10条
+            while (log.children.length > 10) {
+                log.removeChild(log.firstChild);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function startNewDialogue() {
+            currentDialogueID = null;
+            selectedTags = [];
+            document.querySelectorAll('.tag-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.innerHTML = btn.dataset.tag;
+            });
+            document.getElementById('chatContainer').innerHTML = `
+                <div class="message assistant">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        <div class="message-text">
+                            👋 开始新对话！请告诉我你想对比的车型维度。
+                        </div>
+                    </div>
+                </div>
+            `;
+            addDebugLog('🆕 开始新对话');
+        }
+
+        async function loadDialogueList() {
+            // TODO: 实现加载历史对话列表
+            addDebugLog('📋 加载对话列表...');
+        }
+
+        // ===== 启动 =====
+        init();
+    </script>
+</body>
+</html>
+

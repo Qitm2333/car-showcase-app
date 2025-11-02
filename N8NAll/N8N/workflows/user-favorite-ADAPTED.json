@@ -1,0 +1,18 @@
+{
+  "name": "用户收藏夹系统（适配版）",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// 提取并验证参数\nconst body = $input.item.json.body;\nconst action = body.action || 'add';\nconst userID = body.userID;  // 前端传 inviteCode 的值\n\n// 验证必填参数\nif (!userID) {\n  return {\n    json: {\n      success: false,\n      error: '缺少用户ID（inviteCode）'\n    }\n  };\n}\n\n// ========== 1. 创建收藏夹 ==========\nif (action === 'createFolder') {\n  const { folderName, folderIcon } = body;\n  \n  if (!folderName) {\n    return {\n      json: {\n        success: false,\n        error: '缺少收藏夹名称'\n      }\n    };\n  }\n  \n  const folderID = 'folder_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '_' + Math.random().toString(36).substr(2, 9);\n  \n  return {\n    json: {\n      action: 'createFolder',\n      folderID: folderID,\n      userID: userID,\n      folderName: folderName,\n      folderIcon: folderIcon || '📁',\n      createTime: new Date().toISOString(),\n      status: 'active'\n    }\n  };\n}\n\n// ========== 2. 查看收藏夹列表 ==========\nif (action === 'listFolders') {\n  return {\n    json: {\n      action: 'listFolders',\n      userID: userID\n    }\n  };\n}\n\n// ========== 3. 添加收藏（支持指定文件夹 + 分类视角）==========\nif (action === 'add') {\n  const { carID, carName, imageURL, folderID, category, viewType } = body;\n  \n  if (!carID || !carName || !imageURL) {\n    return {\n      json: {\n        success: false,\n        error: '缺少必要参数：carID, carName 或 imageURL'\n      }\n    };\n  }\n  \n  const favoriteID = 'fav_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '_' + Math.random().toString(36).substr(2, 9);\n  \n  return {\n    json: {\n      action: 'add',\n      favoriteID: favoriteID,\n      userID: userID,\n      folderID: folderID || '',\n      carID: carID,\n      carName: carName,\n      imageURL: imageURL,\n      category: category || '',\n      viewType: viewType || '',\n      favoriteTime: new Date().toISOString(),\n      status: 'active'\n    }\n  };\n}\n\n// ========== 4. 查看收藏列表（支持按文件夹筛选）==========\nif (action === 'list') {\n  return {\n    json: {\n      action: 'list',\n      userID: userID,\n      folderID: body.folderID || ''\n    }\n  };\n}\n\n// ========== 5. 删除收藏 ==========\nif (action === 'delete') {\n  const { favoriteID } = body;\n  \n  if (!favoriteID) {\n    return {\n      json: {\n        success: false,\n        error: '缺少 favoriteID'\n      }\n    };\n  }\n  \n  return {\n    json: {\n      action: 'delete',\n      userID: userID,\n      favoriteID: favoriteID\n    }\n  };\n}\n\n// ========== 6. 删除收藏夹 ==========\nif (action === 'deleteFolder') {\n  const { folderID } = body;\n  \n  if (!folderID) {\n    return {\n      json: {\n        success: false,\n        error: '缺少 folderID'\n      }\n    };\n  }\n  \n  return {\n    json: {\n      action: 'deleteFolder',\n      userID: userID,\n      folderID: folderID\n    }\n  };\n}\n\nreturn {\n  json: {\n    success: false,\n    error: '未知操作类型: ' + action\n  }\n};"
+      },
+      "name": "处理参数",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    }
+  ],
+  "connections": {},
+  "meta": {
+    "instanceId": "your-instance-id"
+  }
+}
+

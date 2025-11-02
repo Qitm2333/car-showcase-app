@@ -1,0 +1,1169 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// 提取并验证参数\nconst body = $input.item.json.body;\nconst action = body.action || 'add';\nconst userID = body.userID;\n\n// 验证必填参数\nif (!userID) {\n  return {\n    json: {\n      success: false,\n      error: '缺少用户ID'\n    }\n  };\n}\n\n// ========== 1. 创建收藏夹 ==========\nif (action === 'createFolder') {\n  const { folderName, folderIcon } = body;\n  \n  if (!folderName) {\n    return {\n      json: {\n        success: false,\n        error: '缺少收藏夹名称'\n      }\n    };\n  }\n  \n  const folderID = 'folder_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '_' + Math.random().toString(36).substr(2, 9);\n  \n  return {\n    json: {\n      action: 'createFolder',\n      folderID: folderID,\n      userID: userID,\n      folderName: folderName,\n      folderIcon: folderIcon || '📁',\n      createTime: new Date().toISOString(),\n      status: 'active'\n    }\n  };\n}\n\n// ========== 2. 查看收藏夹列表 ==========\nif (action === 'listFolders') {\n  return {\n    json: {\n      action: 'listFolders',\n      userID: userID\n    }\n  };\n}\n\n// ========== 3. 添加收藏（支持指定文件夹）==========\nif (action === 'add') {\n  const { carID, carName, imageURL, folderID } = body;\n  \n  if (!carID || !carName || !imageURL) {\n    return {\n      json: {\n        success: false,\n        error: '缺少必要参数：carID, carName 或 imageURL'\n      }\n    };\n  }\n  \n  const favoriteID = 'fav_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '_' + Math.random().toString(36).substr(2, 9);\n  \n  return {\n    json: {\n      action: 'add',\n      favoriteID: favoriteID,\n      userID: userID,\n      folderID: folderID || '', // 如果没有指定，则为空（默认文件夹）\n      carID: carID,\n      carName: carName,\n      imageURL: imageURL,\n      favoriteTime: new Date().toISOString(),\n      status: 'active'\n    }\n  };\n}\n\n// ========== 4. 查看收藏列表（支持按文件夹筛选）==========\nif (action === 'list') {\n  return {\n    json: {\n      action: 'list',\n      userID: userID,\n      folderID: body.folderID || '' // 可选：筛选特定文件夹\n    }\n  };\n}\n\n// ========== 5. 删除收藏 ==========\nif (action === 'delete') {\n  const { favoriteID } = body;\n  \n  if (!favoriteID) {\n    return {\n      json: {\n        success: false,\n        error: '缺少 favoriteID'\n      }\n    };\n  }\n  \n  return {\n    json: {\n      action: 'delete',\n      userID: userID,\n      favoriteID: favoriteID\n    }\n  };\n}\n\n// ========== 6. 删除收藏夹 ==========\nif (action === 'deleteFolder') {\n  const { folderID } = body;\n  \n  if (!folderID) {\n    return {\n      json: {\n        success: false,\n        error: '缺少 folderID'\n      }\n    };\n  }\n  \n  return {\n    json: {\n      action: 'deleteFolder',\n      userID: userID,\n      folderID: folderID\n    }\n  };\n}\n\nreturn {\n  json: {\n    success: false,\n    error: '未知操作类型: ' + action\n  }\n};"
+      },
+      "id": "d6a08011-4ed4-4379-a151-c2b861598350",
+      "name": "处理参数",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3760,
+        5296
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 328604113,
+          "mode": "list",
+          "cachedResultName": "FavoriteFolders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=328604113"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "folderID": "={{ $json.folderID }}",
+            "userID": "={{ $json.userID }}",
+            "folderName": "={{ $json.folderName }}",
+            "folderIcon": "={{ $json.folderIcon }}",
+            "createTime": "={{ $json.createTime }}",
+            "status": "={{ $json.status }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "folderID",
+              "displayName": "folderID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userID",
+              "displayName": "userID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "folderName",
+              "displayName": "folderName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "folderIcon",
+              "displayName": "folderIcon",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "createTime",
+              "displayName": "createTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "64575e3e-9204-42a9-9793-648fdd918808",
+      "name": "保存收藏夹",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4192,
+        4928
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 328604113,
+          "mode": "list",
+          "cachedResultName": "FavoriteFolders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=328604113"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "userID",
+              "lookupValue": "={{ $json.userID }}"
+            },
+            {
+              "lookupColumn": "status",
+              "lookupValue": "active"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d9f9cb26-d3f5-45ee-998e-fbdfcc0f2da5",
+      "name": "读取收藏夹",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4192,
+        5088
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1274046316,
+          "mode": "list",
+          "cachedResultName": "Favorites",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=1274046316"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "favoriteID": "={{ $json.favoriteID }}",
+            "userID": "={{ $json.userID }}",
+            "folderID": "={{ $json.folderID }}",
+            "carID": "={{ $json.carID }}",
+            "carName": "={{ $json.carName }}",
+            "imageURL": "={{ $json.imageURL }}",
+            "favoriteTime": "={{ $json.favoriteTime }}",
+            "status": "={{ $json.status }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "favoriteID",
+              "displayName": "favoriteID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userID",
+              "displayName": "userID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "folderID",
+              "displayName": "folderID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "carID",
+              "displayName": "carID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "carName",
+              "displayName": "carName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "imageURL",
+              "displayName": "imageURL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "favoriteTime",
+              "displayName": "favoriteTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "0799e822-28c1-4d19-b673-9eb32d177026",
+      "name": "保存收藏",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4192,
+        5248
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1274046316,
+          "mode": "list",
+          "cachedResultName": "Favorites",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=1274046316"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "userID",
+              "lookupValue": "={{ $json.userID }}"
+            },
+            {
+              "lookupColumn": "status",
+              "lookupValue": "active"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1ea294d4-fe4f-45a1-a483-668cacd38c3f",
+      "name": "读取收藏",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4192,
+        5408
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1274046316,
+          "mode": "list",
+          "cachedResultName": "Favorites",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=1274046316"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "favoriteID",
+              "lookupValue": "={{ $json.favoriteID }}"
+            },
+            {
+              "lookupColumn": "userID",
+              "lookupValue": "={{ $json.userID }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e6bef3a2-a8fa-42a5-ba4d-15136d06c65c",
+      "name": "查找要删除的收藏",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4192,
+        5568
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 328604113,
+          "mode": "list",
+          "cachedResultName": "FavoriteFolders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=328604113"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "folderID",
+              "lookupValue": "={{ $json.folderID }}"
+            },
+            {
+              "lookupColumn": "userID",
+              "lookupValue": "={{ $json.userID }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c2369308-58fc-4411-8937-05f50bb843dc",
+      "name": "查找要删除的收藏夹",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4192,
+        5728
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1274046316,
+          "mode": "list",
+          "cachedResultName": "Favorites",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=1274046316"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "status": "deleted"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "favoriteID",
+              "displayName": "favoriteID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "userID",
+              "displayName": "userID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "folderID",
+              "displayName": "folderID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "carID",
+              "displayName": "carID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "carName",
+              "displayName": "carName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "imageURL",
+              "displayName": "imageURL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "favoriteTime",
+              "displayName": "favoriteTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "b0e0f69a-8cd8-4343-9bd0-069cbf52d097",
+      "name": "标记收藏为删除",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4400,
+        5568
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 328604113,
+          "mode": "list",
+          "cachedResultName": "FavoriteFolders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=328604113"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "deleted",
+            "row_number": "={{ $json.row_number }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "folderID",
+              "displayName": "folderID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "userID",
+              "displayName": "userID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "folderName",
+              "displayName": "folderName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "folderIcon",
+              "displayName": "folderIcon",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "createTime",
+              "displayName": "createTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "ae68cc3d-2a00-4a8a-93f6-2375d291929a",
+      "name": "标记收藏夹为删除",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4400,
+        5728
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nreturn {\n  json: {\n    success: true,\n    message: '收藏夹创建成功',\n    data: {\n      folderID: data.folderID,\n      folderName: data.folderName,\n      folderIcon: data.folderIcon\n    }\n  }\n};"
+      },
+      "id": "d7a398d3-95e1-444d-9a34-ddd9de021687",
+      "name": "创建收藏夹成功",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        4928
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 收藏夹列表响应\nconst items = $input.all();\n\n// 检查是否有有效数据\nconst hasData = items && items.length > 0 && items[0].json && Object.keys(items[0].json).length > 0;\n\nif (!hasData) {\n  // 真正的空数据：返回空列表\n  return {\n    json: {\n      success: true,\n      message: '暂无收藏夹',\n      total: 0,\n      folders: []\n    }\n  };\n}\n\n// 有数据时的处理\nconst folders = items.map(item => ({\n  folderID: item.json.folderID || '',\n  folderName: item.json.folderName || '',\n  folderIcon: item.json.folderIcon || '📁',\n  createTime: item.json.createTime || ''\n}));\n\nreturn {\n  json: {\n    success: true,\n    message: `找到${folders.length}个收藏夹`,\n    total: folders.length,\n    folders: folders\n  }\n};"
+      },
+      "id": "d2d17f80-3829-456b-941b-2f91e548f4af",
+      "name": "收藏夹列表响应",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        5088
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\n\n// 构建返回数据，确保 folderID 正确处理\nconst result = {\n  json: {\n    success: true,\n    message: '收藏成功',\n    data: {\n      favoriteID: data.favoriteID,\n      carName: data.carName,\n      timestamp: data.favoriteTime\n    }\n  }\n};\n\n// 只有当 folderID 存在且不为空时才添加到返回数据\nif (data.folderID && data.folderID !== '') {\n  result.json.data.folderID = data.folderID;\n}\n\nreturn result;"
+      },
+      "id": "0886b9f0-67c8-49f1-8b59-4127af0b985e",
+      "name": "添加收藏成功",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        5248
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 查看列表响应（支持按 folderID 筛选）\nconst items = $input.all();\n\n// 检查是否有有效数据\nconst hasData = items && items.length > 0 && items[0].json && Object.keys(items[0].json).length > 0;\n\nif (!hasData) {\n  // 真正的空数据：返回空列表\n  return {\n    json: {\n      success: true,\n      message: '暂无收藏',\n      total: 0,\n      favorites: []\n    }\n  };\n}\n\n// 🎯 获取要筛选的 folderID（从前一个节点）\nconst requestedFolderID = $('处理参数').first().json.folderID;\n\nconsole.log('🔍 请求的 folderID:', requestedFolderID);\n\n// 🎯 根据 folderID 筛选数据\nlet filteredItems = items;\n\nif (requestedFolderID && requestedFolderID !== '') {\n  // 如果指定了 folderID，只返回该文件夹的收藏\n  filteredItems = items.filter(item => {\n    const itemFolderID = item.json.folderID || '';\n    return itemFolderID === requestedFolderID;\n  });\n  console.log(`✅ 按 folderID 筛选: ${requestedFolderID}, 找到 ${filteredItems.length} 项`);\n} else {\n  // 如果没有指定 folderID，返回所有收藏\n  console.log(`✅ 返回所有收藏: ${filteredItems.length} 项`);\n}\n\n// 转换为前端需要的格式\nconst favorites = filteredItems.map(item => ({\n  favoriteID: item.json.favoriteID || '',\n  folderID: item.json.folderID || '',\n  carID: item.json.carID || '',\n  carName: item.json.carName || '',\n  imageURL: item.json.imageURL || '',\n  favoriteTime: item.json.favoriteTime || ''\n}));\n\nreturn {\n  json: {\n    success: true,\n    message: `找到${favorites.length}个收藏`,\n    total: favorites.length,\n    favorites: favorites\n  }\n};"
+      },
+      "id": "cbf28904-db0c-451a-be40-7e73cb85699d",
+      "name": "收藏列表响应",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        5408
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    success: true,\n    message: '已取消收藏'\n  }\n};"
+      },
+      "id": "9a0de830-0dd9-4631-8ede-05f373bef228",
+      "name": "删除收藏成功",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4592,
+        5568
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    success: true,\n    message: '收藏夹已删除'\n  }\n};"
+      },
+      "id": "b4b42ffd-76ee-4d8f-8288-1d2393446279",
+      "name": "删除收藏夹成功",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4592,
+        5728
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "user-favorite",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b8e2b7a3-e42b-49cc-ba9f-79dcd80c16d1",
+      "name": "收藏入口1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        3536,
+        5296
+      ],
+      "webhookId": "user-favorite"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "createFolder",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "创建收藏夹"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "listFolders",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "查看收藏夹"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "add",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "添加收藏"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "list",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "查看收藏"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "delete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "删除收藏"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "deleteFolder",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "删除收藏夹"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5895ab7c-84a2-47a7-9a9f-978c4ae92d69",
+      "name": "选择操作1",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        4000,
+        5232
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a54d396b-7c85-4fb3-83cc-466389fefb2a",
+      "name": "返回结果2",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        4800,
+        5232
+      ]
+    }
+  ],
+  "connections": {
+    "处理参数": {
+      "main": [
+        [
+          {
+            "node": "选择操作1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "保存收藏夹": {
+      "main": [
+        [
+          {
+            "node": "创建收藏夹成功",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "读取收藏夹": {
+      "main": [
+        [
+          {
+            "node": "收藏夹列表响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "保存收藏": {
+      "main": [
+        [
+          {
+            "node": "添加收藏成功",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "读取收藏": {
+      "main": [
+        [
+          {
+            "node": "收藏列表响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查找要删除的收藏": {
+      "main": [
+        [
+          {
+            "node": "标记收藏为删除",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查找要删除的收藏夹": {
+      "main": [
+        [
+          {
+            "node": "标记收藏夹为删除",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "标记收藏为删除": {
+      "main": [
+        [
+          {
+            "node": "删除收藏成功",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "标记收藏夹为删除": {
+      "main": [
+        [
+          {
+            "node": "删除收藏夹成功",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "创建收藏夹成功": {
+      "main": [
+        [
+          {
+            "node": "返回结果2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "收藏夹列表响应": {
+      "main": [
+        [
+          {
+            "node": "返回结果2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "添加收藏成功": {
+      "main": [
+        [
+          {
+            "node": "返回结果2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "收藏列表响应": {
+      "main": [
+        [
+          {
+            "node": "返回结果2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "删除收藏成功": {
+      "main": [
+        [
+          {
+            "node": "返回结果2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "删除收藏夹成功": {
+      "main": [
+        [
+          {
+            "node": "返回结果2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "收藏入口1": {
+      "main": [
+        [
+          {
+            "node": "处理参数",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "选择操作1": {
+      "main": [
+        [
+          {
+            "node": "保存收藏夹",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "读取收藏夹",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "保存收藏",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "读取收藏",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "查找要删除的收藏",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "查找要删除的收藏夹",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5cb72472896fce0666bc03ef84936c4f09ec11e6b4f95f9aebe3d538947c7935"
+  }
+}

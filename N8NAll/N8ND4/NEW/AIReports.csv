@@ -1,0 +1,3 @@
+reportID,dialogueID,userID,htmlContent,createTime
+report_1730448000001,dlg_1730448000001,testCode,"<!DOCTYPE html><html><head><meta charset='UTF-8'><title>车型对比报告</title></head><body><h1>车型对比报告</h1><p>示例报告内容...</p></body></html>",2024-11-01T10:30:00.000Z
+

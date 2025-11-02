@@ -1,0 +1,501 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-analysis",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      "name": "Webhook入口",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        3264,
+        6816
+      ],
+      "webhookId": "ai-analysis-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const action = $input.item.json.body.action;\nreturn {json: {action: action, data: $input.item.json.body}};"
+      },
+      "id": "b2c3d4e5-f6a7-8901-2345-678901bcdefg",
+      "name": "Router",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3504,
+        6816
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "sendMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "sendMessage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "generateReport",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-2"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "generateReport"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "getDialogueList",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-3"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "getDialogueList"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "getDialogueDetail",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-4"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "getDialogueDetail"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c3d4e5f6-a7b8-9012-3456-789012cdefgh",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        3744,
+        6800
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========== 处理消息：提取基本信息 ==========\nconst data = $input.item.json.data;\nconst content = data.content || '';\nconst userID = data.userID || 'testCode';\nconst dialogueID = data.dialogueID || null;\nconst isNewDialogue = !dialogueID;\n\n// 生成新的dialogueID（如果是新对话）\nconst newDialogueID = isNewDialogue ? 'dlg_' + Date.now() : dialogueID;\n\n// 关键词提取\nconst keywords = ['外观','内饰','性能','续航','空间','配置','智能化','价格','安全','舒适','外饰','内装','动力'];\nconst extractedTags = keywords.filter(k => content.includes(k));\n\n// 生成标题\nlet title = '';\nif (extractedTags.length > 0) {\n  title = extractedTags.slice(0, 3).join('、') + '分析';\n} else {\n  title = content.slice(0, 20) + (content.length > 20 ? '...' : '');\n}\n\nconst timestamp = new Date().toISOString();\n\nreturn {\n  json: {\n    dialogueID: newDialogueID,\n    userID: userID,\n    title: title,\n    tags: extractedTags.join(','),\n    createTime: timestamp,\n    status: 'active',\n    isNewDialogue: isNewDialogue,\n    userContent: content\n  }\n};"
+      },
+      "id": "d4e5f6a7-b8c9-0123-4567-890123defghi",
+      "name": "ProcessMessage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4032,
+        6608
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.isNewDialogue}}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true"
+                    },
+                    "id": "condition-new"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "新对话"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "e5f6a7b8-c9d0-1234-5678-901234efghij",
+      "name": "判断是否新对话",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        4272,
+        6608
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========== 新对话：初始化conversationHistory ==========\nconst data = $input.item.json;\n\n// 初始化conversationHistory\nconst initialHistory = `userSpeak:${data.userContent}----`;\n\nreturn {\n  json: {\n    dialogueID: data.dialogueID,\n    userID: data.userID,\n    title: data.title,\n    tags: data.tags,\n    createTime: data.createTime,\n    conversationHistory: initialHistory,\n    status: data.status,\n    userContent: data.userContent\n  }\n};"
+      },
+      "id": "f6a7b8c9-d0e1-2345-6789-012345fghijk",
+      "name": "初始化对话",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4512,
+        6512
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========== 已有对话：追加用户消息到历史 ==========\nconst data = $input.item.json;\n// 注意：这里需要从Google Sheets读取的conversationHistory\n// 假设从\"读取对话历史\"节点获取\nconst sheetData = $('读取对话历史').first()?.json || {};\nconst existingHistory = sheetData.conversationHistory || '';\n\n// 追加新的用户消息\nconst updatedHistory = existingHistory + `userSpeak:${data.userContent}----`;\n\nreturn {\n  json: {\n    dialogueID: data.dialogueID,\n    userID: data.userID,\n    title: data.title || sheetData.title,\n    tags: data.tags || sheetData.tags,\n    createTime: data.createTime,\n    conversationHistory: updatedHistory,\n    status: data.status,\n    userContent: data.userContent\n  }\n};"
+      },
+      "id": "a7b8c9d0-e1f2-3456-7890-123456ghijkl",
+      "name": "追加用户消息",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4752,
+        6704
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========== 调用 DeepSeek API (模拟版) ==========\nconst data = $input.item.json;\nconst conversationHistory = data.conversationHistory;\n\n// 解析历史对话\nconst pairs = conversationHistory.split('----').filter(s => s.trim());\nconst messages = [];\nfor (const pair of pairs) {\n  if (pair.startsWith('userSpeak:')) {\n    messages.push({\n      role: 'user',\n      content: pair.replace('userSpeak:', '')\n    });\n  } else if (pair.startsWith('AISpeak:')) {\n    messages.push({\n      role: 'assistant',\n      content: pair.replace('AISpeak:', '')\n    });\n  }\n}\n\n// TODO: 真实接入DeepSeek API\n// const response = await fetch('https://api.deepseek.com/v1/chat/completions', {\n//   method: 'POST',\n//   headers: {\n//     'Content-Type': 'application/json',\n//     'Authorization': 'Bearer YOUR_API_KEY'\n//   },\n//   body: JSON.stringify({\n//     model: 'deepseek-chat',\n//     messages: [\n//       { role: 'system', content: '你是一个专业的汽车分析师。' },\n//       ...messages\n//     ]\n//   })\n// });\n// const result = await response.json();\n// const aiReply = result.choices[0].message.content;\n\n// 模拟AI回复（MVP阶段）\nconst latestUserMessage = messages[messages.length - 1]?.content || '';\nlet aiReply = '';\n\nif (latestUserMessage.includes('外观') || latestUserMessage.includes('外饰')) {\n  aiReply = '我理解您关注车辆的外观设计。外观是一款车的第一印象，包括前脸设计、车身线条、轮毂造型等。您想对比哪几款车型的外观呢？';\n} else if (latestUserMessage.includes('性能') || latestUserMessage.includes('动力')) {\n  aiReply = '性能分析是很重要的对比维度。我会关注动力参数、加速性能、操控表现等。请告诉我您想对比的车型，我会为您详细分析。';\n} else if (latestUserMessage.includes('生成报告') || latestUserMessage.includes('对比报告')) {\n  aiReply = '好的，我将为您生成详细的车型对比报告。请点击"生成报告"按钮，我会根据我们的对话内容制作专业的对比分析报告。';\n} else {\n  aiReply = '好的，我理解了您的需求。请告诉我您想对比的车型和关注的维度（如外观、内饰、性能、配置等），我会为您提供详细的分析。';\n}\n\nconst messageID = 'msg_' + Date.now();\n\nreturn {\n  json: {\n    ...data,\n    aiReply: aiReply,\n    messageID: messageID\n  }\n};"
+      },
+      "id": "b8c9d0e1-f2a3-4567-8901-234567hijklm",
+      "name": "调用AI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4992,
+        6608
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========== 更新conversationHistory：追加AI回复 ==========\nconst data = $input.item.json;\nconst aiReply = data.aiReply;\n\n// 追加AI回复到历史\nconst finalHistory = data.conversationHistory + `AISpeak:${aiReply}----`;\n\nreturn {\n  json: {\n    dialogueID: data.dialogueID,\n    userID: data.userID,\n    title: data.title,\n    tags: data.tags,\n    conversationHistory: finalHistory,\n    status: data.status,\n    createTime: data.createTime,\n    // 返回给前端的数据\n    response: {\n      success: true,\n      dialogueID: data.dialogueID,\n      messageID: data.messageID,\n      aiReply: aiReply,\n      title: data.title,\n      extractedTags: data.tags ? data.tags.split(',').filter(t => t) : []\n    }\n  }\n};"
+      },
+      "id": "c9d0e1f2-a3b4-5678-9012-345678ijklmn",
+      "name": "更新历史",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5232,
+        6608
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========== 格式化最终响应 ==========\nreturn {json: $input.item.json.response};"
+      },
+      "id": "d0e1f2a3-b4c5-6789-0123-456789jklmno",
+      "name": "格式化响应",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5712,
+        6608
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========== 生成报告 ==========\nconst data = $input.item.json.data;\nconst dialogueID = data.dialogueID;\nconst userID = data.userID || 'testCode';\nconst tags = data.tags || ['外观','内饰'];\nconst vehicles = data.vehicles || [{name:'极氪009'},{name:'小鹏X9'},{name:'腾势D9'}];\n\nconst reportID = 'report_' + Date.now();\nconst createTime = new Date().toISOString();\n\n// 生成HTML\nconst html = `<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>车型对比报告 - ${reportID}</title>\n    <style>\n        * {margin: 0;padding: 0;box-sizing: border-box;}\n        body {font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);padding: 40px 20px;min-height: 100vh;}\n        .container {max-width: 1200px;margin: 0 auto;background: white;border-radius: 20px;box-shadow: 0 20px 60px rgba(0,0,0,0.3);overflow: hidden;}\n        .header {background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);color: white;padding: 40px;text-align: center;}\n        .header h1 {font-size: 32px;margin-bottom: 10px;}\n        .header p {opacity: 0.9;font-size: 14px;}\n        .print-btn {position: fixed;top: 20px;right: 20px;padding: 12px 24px;background: white;color: #667eea;border: none;border-radius: 50px;font-size: 16px;font-weight: 600;cursor: pointer;box-shadow: 0 4px 15px rgba(0,0,0,0.2);transition: all 0.3s;z-index: 1000;}\n        .print-btn:hover {transform: translateY(-2px);box-shadow: 0 6px 20px rgba(0,0,0,0.3);}\n        .content {padding: 40px;}\n        table {width: 100%;border-collapse: collapse;margin-top: 20px;}\n        thead {background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);color: white;}\n        th, td {padding: 20px;text-align: left;border-bottom: 1px solid #e0e0e0;}\n        th {font-weight: 600;font-size: 16px;}\n        td {font-size: 14px;color: #333;}\n        tbody tr:hover {background: #f8f9ff;}\n        .footer {text-align: center;padding: 30px;color: #999;font-size: 14px;border-top: 1px solid #e0e0e0;}\n        @media print {body {background: white;padding: 0;}.print-btn {display: none;}.container {box-shadow: none;}}\n    </style>\n</head>\n<body>\n    <button class=\"print-btn\" onclick=\"window.print()\">🖨️ 打印/保存PDF</button>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>🚗 车型对比分析报告</h1>\n            <p>生成时间：${new Date(createTime).toLocaleString('zh-CN')}</p>\n        </div>\n        <div class=\"content\">\n            <table>\n                <thead>\n                    <tr>\n                        <th>对比维度</th>\n                        ${vehicles.map(v => `<th>${v.name}</th>`).join('')}\n                    </tr>\n                </thead>\n                <tbody>\n                    ${tags.map(tag => `\n                    <tr>\n                        <td><strong>${tag}</strong></td>\n                        ${vehicles.map(() => '<td>该车型在此维度表现优秀</td>').join('')}\n                    </tr>\n                    `).join('')}\n                </tbody>\n            </table>\n        </div>\n        <div class=\"footer\">\n            <p>报告ID: ${reportID}</p>\n            <p>本报告由AI智能分析生成，仅供参考</p>\n        </div>\n    </div>\n</body>\n</html>`;\n\nreturn {\n  json: {\n    success: true,\n    reportID: reportID,\n    htmlContent: html,\n    createTime: createTime\n  }\n};"
+      },
+      "id": "e1f2a3b4-c5d6-7890-1234-567890klmnop",
+      "name": "GenerateReport",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4032,
+        6816
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========== 获取对话列表 ==========\nconst data = $input.item.json.data;\nconst userID = data.userID || 'testCode';\n\n// MVP阶段：返回模拟数据\n// TODO: 从Google Sheets读取真实数据\nconst dialogues = [\n  {\n    dialogueID: 'dlg_001',\n    title: '车型外观对比',\n    tags: ['外观', '设计'],\n    createTime: '2024-11-01 10:00',\n    preview: '请帮我分析问界M7的外饰'\n  },\n  {\n    dialogueID: 'dlg_002',\n    title: '续航性能分析',\n    tags: ['续航', '性能'],\n    createTime: '2024-11-01 14:30',\n    preview: '我想了解一下新能源车的续航表现'\n  }\n];\n\nreturn {\n  json: {\n    success: true,\n    dialogues: dialogues,\n    total: dialogues.length\n  }\n};"
+      },
+      "id": "f2a3b4c5-d6e7-8901-2345-678901lmnopq",
+      "name": "GetDialogueList",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4032,
+        7008
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========== 获取对话详情 ==========\nconst data = $input.item.json.data;\nconst dialogueID = data.dialogueID;\n\n// TODO: 从Google Sheets读取conversationHistory并解析\n// MVP阶段：返回模拟数据\nconst messages = [\n  {\n    role: 'user',\n    content: '请帮我分析问界M7的外饰',\n    timestamp: '2024-11-01 10:00:00'\n  },\n  {\n    role: 'assistant',\n    content: '我理解您关注车辆的外观设计。外观是一款车的第一印象，包括前脸设计、车身线条等。',\n    timestamp: '2024-11-01 10:00:05'\n  }\n];\n\nreturn {\n  json: {\n    success: true,\n    dialogueID: dialogueID,\n    title: '车型外观对比',\n    messages: messages\n  }\n};"
+      },
+      "id": "a2b3c4d5-e6f7-8901-2345-678901mnopqr",
+      "name": "GetDialogueDetail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4032,
+        7200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "b3c4d5e6-f7a8-9012-3456-789012nopqrs",
+      "name": "统一响应",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        5952,
+        6816
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook入口": {
+      "main": [
+        [
+          {
+            "node": "Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "ProcessMessage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GenerateReport",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetDialogueList",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetDialogueDetail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ProcessMessage": {
+      "main": [
+        [
+          {
+            "node": "判断是否新对话",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "判断是否新对话": {
+      "main": [
+        [
+          {
+            "node": "初始化对话",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "追加用户消息",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "初始化对话": {
+      "main": [
+        [
+          {
+            "node": "调用AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "追加用户消息": {
+      "main": [
+        [
+          {
+            "node": "调用AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "调用AI": {
+      "main": [
+        [
+          {
+            "node": "更新历史",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "更新历史": {
+      "main": [
+        [
+          {
+            "node": "格式化响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "格式化响应": {
+      "main": [
+        [
+          {
+            "node": "统一响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GenerateReport": {
+      "main": [
+        [
+          {
+            "node": "统一响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetDialogueList": {
+      "main": [
+        [
+          {
+            "node": "统一响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetDialogueDetail": {
+      "main": [
+        [
+          {
+            "node": "统一响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5cb72472896fce0666bc03ef84936c4f09ec11e6b4f95f9aebe3d538947c7935"
+  }
+}
+

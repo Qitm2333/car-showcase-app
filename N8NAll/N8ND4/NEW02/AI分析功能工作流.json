@@ -1,0 +1,1029 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const action = $input.item.json.body.action;\nreturn {json: {action: action, data: $input.item.json.body}};"
+      },
+      "id": "d370aabe-0d95-4974-8677-9f2d83f2ace6",
+      "name": "Router",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3760,
+        6848
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "sendMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "sendMessage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "generateReport",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-2"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "generateReport"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "getDialogueList",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-3"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "getDialogueList"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "getDialogueDetail",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-4"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "getDialogueDetail"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bb958d21-b706-4179-8dcd-8df94a51e226",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        4000,
+        6832
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json.data;\nconst content = data.content || '';\nconst conversationHistory = data.conversationHistory || '';\nconst dialogueID = data.dialogueID || 'dlg_' + Date.now();\nconst userID = data.userID || 'testCode';\nconst isNewDialogue = !data.dialogueID;\n\n// 提取关键词标签\nconst keywords = ['外观','内饰','性能','续航','空间','配置','智能化','价格','安全','舒适'];\nconst extractedTags = keywords.filter(k => content.includes(k));\n\n// ⭐ 标题从前端传来，不在这里生成\nconst title = data.title || '未命名对话';\n\nconst timestamp = new Date().toISOString();\nconst messageID_user = 'msg_' + Date.now() + '_user';\n\nreturn {\n  json: {\n    dialogueID: dialogueID,\n    userID: userID,\n    title: title,  // ⭐ 直接使用前端传来的标题\n    tags: extractedTags.join(','),\n    createTime: timestamp,\n    status: 'active',\n    isNewDialogue: isNewDialogue,\n    conversationHistory: conversationHistory,\n    userMessage: {\n      messageID: messageID_user,\n      dialogueID: dialogueID,\n      role: 'user',\n      content: content,\n      timestamp: timestamp\n    }\n  }\n};"
+      },
+      "id": "23a4e674-e91c-4c30-b78b-9f680f4711cc",
+      "name": "ProcessMessage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4288,
+        6464
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.isNewDialogue}}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true"
+                    },
+                    "id": "condition-new"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "新对话"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "80888c7d-9a9c-44a3-b815-55cf68897893",
+      "name": "判断是否新对话",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        4496,
+        6464
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ⭐ 从智能选图合并节点获取数据\nconst mergedData = $('智能选图合并').first().json;\nconst aiOutput = mergedData.aiOutput || '';\nconst dialogueID = mergedData.dialogueID;\nconst title = mergedData.title;\nconst vehiclesWithImages = mergedData.vehicles || [];\n\n// 解析AI返回的JSON\nlet reportData = {\n  vehicles: [],\n  dimensions: []\n};\n\ntry {\n  const jsonMatch = aiOutput.match(/```json\\s*([\\s\\S]+?)\\s*```/) || \n                    aiOutput.match(/\\{[\\s\\S]+\\}/);\n  \n  if (jsonMatch) {\n    const jsonStr = jsonMatch[1] || jsonMatch[0];\n    reportData = JSON.parse(jsonStr);\n  }\n} catch (e) {\n  reportData = {\n    vehicles: vehiclesWithImages.map(v => ({name: v.name})),\n    dimensions: [\n      {\n        name: '解析失败', \n        [vehiclesWithImages[0]?.name]: {label: '请重试', desc1: '数据生成异常', desc2: ''},\n        [vehiclesWithImages[1]?.name]: {label: '请重试', desc1: '数据生成异常', desc2: ''}\n      }\n    ]\n  };\n}\n\nconst dimensions = reportData.dimensions || [];\n\n// ⭐ 生成表头（使用原始高清图片）\nlet tableHeaders = '<th>对比维度</th>';\nfor (const v of vehiclesWithImages) {\n  const originalUrl = v.imageUrl || '';\n  \n  // 🎯 优先使用原始URL（最高清）\n  const primaryUrl = originalUrl;\n  \n  // 🛡️ 备用：代理URL（高质量，不压缩）\n  const proxiedUrl = originalUrl.startsWith('http') \n    ? `https://images.weserv.nl/?url=${encodeURIComponent(originalUrl)}&q=95&il`\n    : originalUrl;\n  \n  // 🎨 最终降级：SVG占位图\n  const fallbackUrl = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 267'%3E%3Crect fill='%23f0f0f0' width='400' height='267'/%3E%3Ctext x='200' y='133' font-size='20' text-anchor='middle' fill='%23999'%3E${encodeURIComponent(v.name)}%3C/text%3E%3C/svg%3E`;\n  \n  tableHeaders += `<th>\n    <div class=\"car-header\">\n      <img src=\"${primaryUrl}\" \n           alt=\"${v.name}\" \n           class=\"car-image\" \n           data-proxy=\"${proxiedUrl}\"\n           data-fallback=\"${fallbackUrl}\"\n           crossorigin=\"anonymous\"\n           onerror=\"handleImageError(this)\"\n           onload=\"this.style.opacity=1;\"\n           onclick=\"openImageModal('${primaryUrl}', '${v.name}')\">\n      <div class=\"car-name\">${v.name}</div>\n    </div>\n  </th>`;\n}\n\n// 生成表格行\nlet tableRows = '';\nfor (const dim of dimensions) {\n  let row = '<tr><td>' + dim.name + '</td>';\n  \n  for (const v of vehiclesWithImages) {\n    const data = dim[v.name];\n    if (typeof data === 'object' && data.label) {\n      row += '<td><span class=\"dimension-label\">' + data.label + '</span>';\n      if (data.desc1) {\n        row += '<span class=\"dimension-desc\">' + data.desc1 + '</span>';\n      }\n      if (data.desc2) {\n        row += '<span class=\"dimension-desc\">' + data.desc2 + '</span>';\n      }\n      row += '</td>';\n    } else {\n      row += '<td>' + (data || '暂无数据') + '</td>';\n    }\n  }\n  \n  row += '</tr>';\n  tableRows += row;\n}\n\n// ⭐ 生成完整HTML\nconst html = `<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>${title} - AI分析报告</title>\n    <style>\n        * {\n            margin: 0;\n            padding: 0;\n            box-sizing: border-box;\n        }\n        \n        body {\n            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif;\n            background: #fafafa;\n            padding: 60px 40px;\n            color: #333;\n        }\n        \n        .container {\n            max-width: 1400px;\n            margin: 0 auto;\n        }\n        \n        .header {\n            margin-bottom: 60px;\n            border-left: 4px solid #667eea;\n            padding-left: 20px;\n        }\n        \n        .header h1 {\n            font-size: 28px;\n            font-weight: 600;\n            margin-bottom: 8px;\n            letter-spacing: -0.5px;\n        }\n        \n        .header p {\n            font-size: 14px;\n            color: #666;\n            font-weight: 300;\n            letter-spacing: 0.5px;\n        }\n        \n        .toolbar {\n            position: fixed;\n            top: 20px;\n            right: 20px;\n            display: flex;\n            flex-direction: column;\n            gap: 10px;\n            z-index: 1000;\n        }\n        \n        .toolbar-row {\n            display: flex;\n            gap: 10px;\n        }\n        \n        .btn {\n            padding: 12px 24px;\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            color: white;\n            border: none;\n            border-radius: 50px;\n            font-weight: 600;\n            cursor: pointer;\n            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);\n            transition: all 0.3s;\n            font-size: 14px;\n            white-space: nowrap;\n        }\n        \n        .btn:hover {\n            transform: translateY(-2px);\n            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);\n        }\n        \n        .btn-secondary {\n            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);\n            box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);\n        }\n        \n        .btn-secondary:hover {\n            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);\n        }\n        \n        .btn-success {\n            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);\n            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);\n        }\n        \n        .btn-success:hover {\n            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.6);\n        }\n        \n        .size-controls {\n            background: white;\n            padding: 15px 20px;\n            border-radius: 20px;\n            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);\n            display: flex;\n            flex-direction: column;\n            gap: 12px;\n        }\n        \n        .control-item {\n            display: flex;\n            align-items: center;\n            gap: 12px;\n        }\n        \n        .control-item label {\n            font-size: 13px;\n            color: #666;\n            font-weight: 500;\n            white-space: nowrap;\n            min-width: 50px;\n        }\n        \n        .slider {\n            width: 120px;\n            height: 6px;\n            border-radius: 3px;\n            outline: none;\n            -webkit-appearance: none;\n        }\n        \n        .height-slider {\n            background: linear-gradient(to right, #667eea, #764ba2);\n        }\n        \n        .width-slider {\n            background: linear-gradient(to right, #f093fb, #f5576c);\n        }\n        \n        .image-slider {\n            background: linear-gradient(to right, #43e97b, #38f9d7);\n        }\n        \n        .slider::-webkit-slider-thumb {\n            -webkit-appearance: none;\n            width: 18px;\n            height: 18px;\n            border-radius: 50%;\n            background: white;\n            cursor: pointer;\n            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);\n        }\n        \n        .slider::-moz-range-thumb {\n            width: 18px;\n            height: 18px;\n            border-radius: 50%;\n            background: white;\n            cursor: pointer;\n            border: none;\n            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);\n        }\n        \n        .value-display {\n            font-size: 13px;\n            font-weight: 600;\n            min-width: 45px;\n            text-align: right;\n        }\n        \n        .height-value {\n            color: #667eea;\n        }\n        \n        .width-value {\n            color: #f5576c;\n        }\n        \n        .image-value {\n            color: #38f9d7;\n        }\n        \n        .table-wrapper {\n            background: white;\n            border-radius: 8px;\n            overflow: hidden;\n            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);\n        }\n        \n        table {\n            width: 100%;\n            border-collapse: collapse;\n        }\n        \n        thead tr {\n            background: #f8f9fc;\n            border-bottom: 1px solid #e5e7eb;\n        }\n        \n        th {\n            text-align: center;\n            font-weight: 600;\n            font-size: 14px;\n            color: #333;\n            letter-spacing: 0.3px;\n            vertical-align: middle;\n        }\n        \n        th:first-child {\n            width: 15%;\n        }\n        \n        .car-header {\n            display: flex;\n            flex-direction: column;\n            align-items: center;\n            gap: 12px;\n            padding: 10px;\n        }\n        \n        .car-image {\n            object-fit: contain;\n            border-radius: 8px;\n            box-shadow: 0 2px 8px rgba(0,0,0,0.08);\n            background: #fafafa;\n            opacity: 0;\n            transition: all 0.3s ease;\n            cursor: zoom-in;\n            image-rendering: -webkit-optimize-contrast;\n            image-rendering: crisp-edges;\n        }\n        \n        .car-image:hover {\n            transform: scale(1.05);\n            box-shadow: 0 4px 16px rgba(0,0,0,0.15);\n        }\n        \n        .car-image:not([src*=\"data:image\"]) {\n            filter: none !important;\n            -webkit-filter: none !important;\n        }\n        \n        .car-name {\n            font-weight: 600;\n            font-size: 15px;\n            color: #333;\n        }\n        \n        tbody tr {\n            border-bottom: 1px solid #f0f0f0;\n            transition: background-color 0.2s ease;\n        }\n        \n        tbody tr:hover {\n            background: #fafbff;\n        }\n        \n        tbody tr:last-child {\n            border-bottom: none;\n        }\n        \n        td {\n            font-size: 14px;\n            color: #555;\n            text-align: center;\n            vertical-align: middle;\n        }\n        \n        td:first-child {\n            font-weight: 500;\n            color: #333;\n            background: #f9fafb;\n        }\n        \n        .dimension-label {\n            display: block;\n            font-weight: 500;\n            color: #333;\n            margin-bottom: 4px;\n            font-size: 14px;\n        }\n        \n        .dimension-desc {\n            display: block;\n            font-size: 12px;\n            color: #666;\n            font-weight: 400;\n            margin-top: 4px;\n            line-height: 1.5;\n        }\n        \n        .image-modal {\n            display: none;\n            position: fixed;\n            z-index: 2000;\n            left: 0;\n            top: 0;\n            width: 100%;\n            height: 100%;\n            background: rgba(0, 0, 0, 0.9);\n            justify-content: center;\n            align-items: center;\n            animation: fadeIn 0.3s ease;\n        }\n        \n        .image-modal.active {\n            display: flex;\n        }\n        \n        .modal-content {\n            max-width: 90%;\n            max-height: 90%;\n            object-fit: contain;\n            border-radius: 12px;\n            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);\n            animation: zoomIn 0.3s ease;\n        }\n        \n        .modal-close {\n            position: absolute;\n            top: 30px;\n            right: 40px;\n            font-size: 40px;\n            color: white;\n            cursor: pointer;\n            font-weight: 300;\n            transition: transform 0.2s;\n        }\n        \n        .modal-close:hover {\n            transform: scale(1.2);\n        }\n        \n        .modal-title {\n            position: absolute;\n            bottom: 30px;\n            left: 50%;\n            transform: translateX(-50%);\n            color: white;\n            font-size: 20px;\n            font-weight: 600;\n            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);\n        }\n        \n        @keyframes fadeIn {\n            from { opacity: 0; }\n            to { opacity: 1; }\n        }\n        \n        @keyframes zoomIn {\n            from { transform: scale(0.8); opacity: 0; }\n            to { transform: scale(1); opacity: 1; }\n        }\n        \n        [contenteditable=\"true\"] {\n            outline: 2px dashed #667eea;\n            outline-offset: 2px;\n            background: #fffbf0;\n            border-radius: 4px;\n        }\n        \n        [contenteditable=\"true\"]:focus {\n            outline: 2px solid #667eea;\n            background: #fff;\n        }\n        \n        .footer {\n            margin-top: 40px;\n            text-align: center;\n            color: #999;\n            font-size: 12px;\n        }\n        \n        @media print {\n            body {\n                background: white;\n                padding: 20px;\n            }\n            \n            .toolbar {\n                display: none;\n            }\n            \n            .image-modal {\n                display: none !important;\n            }\n            \n            .container {\n                box-shadow: none;\n            }\n            \n            [contenteditable=\"true\"] {\n                outline: none;\n                background: white;\n            }\n            \n            .car-image {\n                cursor: default;\n            }\n        }\n        \n        @media (max-width: 768px) {\n            body {\n                padding: 40px 20px;\n            }\n            \n            .toolbar {\n                top: 10px;\n                right: 10px;\n            }\n            \n            .toolbar-row {\n                flex-direction: column;\n            }\n            \n            .size-controls {\n                padding: 12px 16px;\n            }\n            \n            .control-item {\n                flex-direction: column;\n                align-items: stretch;\n            }\n            \n            .slider {\n                width: 100%;\n            }\n            \n            .modal-close {\n                top: 15px;\n                right: 20px;\n                font-size: 30px;\n            }\n            \n            .modal-title {\n                font-size: 16px;\n                bottom: 15px;\n            }\n            \n            .header {\n                margin-bottom: 40px;\n            }\n            \n            .header h1 {\n                font-size: 22px;\n            }\n        }\n    </style>\n</head>\n<body>\n    <div class=\"toolbar\">\n        <div class=\"toolbar-row\">\n            <button class=\"btn\" onclick=\"window.print()\">🖨️ 打印PDF</button>\n            <button class=\"btn btn-secondary\" onclick=\"toggleEdit()\" id=\"editBtn\">✏️ 编辑</button>\n            <button class=\"btn btn-success\" onclick=\"transposeTable()\" id=\"transposeBtn\">🔄 转置</button>\n        </div>\n        <div class=\"size-controls\">\n            <div class=\"control-item\">\n                <label>🖼️ 图片</label>\n                <input type=\"range\" min=\"150\" max=\"500\" value=\"250\" class=\"slider image-slider\" id=\"imageSlider\" oninput=\"adjustImageSize(this.value)\">\n                <span class=\"value-display image-value\" id=\"imageValue\">250px</span>\n            </div>\n            <div class=\"control-item\">\n                <label>📏 行高</label>\n                <input type=\"range\" min=\"10\" max=\"100\" value=\"28\" class=\"slider height-slider\" id=\"heightSlider\" oninput=\"adjustHeight(this.value)\">\n                <span class=\"value-display height-value\" id=\"heightValue\">28px</span>\n            </div>\n            <div class=\"control-item\">\n                <label>📐 宽度</label>\n                <input type=\"range\" min=\"10\" max=\"60\" value=\"20\" class=\"slider width-slider\" id=\"widthSlider\" oninput=\"adjustWidth(this.value)\">\n                <span class=\"value-display width-value\" id=\"widthValue\">20px</span>\n            </div>\n        </div>\n    </div>\n    \n    <div class=\"image-modal\" id=\"imageModal\" onclick=\"closeImageModal()\">\n        <span class=\"modal-close\">&times;</span>\n        <img src=\"\" alt=\"\" class=\"modal-content\" id=\"modalImage\" onclick=\"event.stopPropagation()\">\n        <div class=\"modal-title\" id=\"modalTitle\"></div>\n    </div>\n    \n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>🚗 ${title}</h1>\n            <p>AI智能分析报告 · 生成时间：${new Date().toLocaleString('zh-CN')}</p>\n        </div>\n        \n        <div class=\"table-wrapper\" id=\"tableWrapper\">\n            <table id=\"reportTable\">\n                <thead>\n                    <tr>${tableHeaders}</tr>\n                </thead>\n                <tbody>\n                    ${tableRows}\n                </tbody>\n            </table>\n        </div>\n        \n        <div class=\"footer\">\n            <p>报告ID: report_${dialogueID} · 由AI车型分析助手生成 · 点击图片可放大查看</p>\n        </div>\n    </div>\n    \n    <script>\n        // ⭐ 图片错误处理（3层降级：原始 → 代理 → 占位图）\n        function handleImageError(img) {\n            if (!img.dataset.failedOnce) {\n                console.log('图片加载失败，尝试使用代理:', img.alt);\n                img.dataset.failedOnce = 'true';\n                img.src = img.dataset.proxy;\n            } else if (!img.dataset.failedTwice) {\n                console.log('代理也失败，使用占位图:', img.alt);\n                img.dataset.failedTwice = 'true';\n                img.onerror = null;\n                img.src = img.dataset.fallback;\n            }\n        }\n        \n        let isEditing = false;\n        let isTransposed = false;\n        let originalTableHTML = '';\n        let currentHeight = 28;\n        let currentWidth = 20;\n        let currentImageSize = 250;\n        \n        window.onload = function() {\n            const savedHeight = localStorage.getItem('reportRowHeight') || '28';\n            const savedWidth = localStorage.getItem('reportRowWidth') || '20';\n            const savedImageSize = localStorage.getItem('reportImageSize') || '250';\n            \n            document.getElementById('heightSlider').value = savedHeight;\n            document.getElementById('widthSlider').value = savedWidth;\n            document.getElementById('imageSlider').value = savedImageSize;\n            \n            currentHeight = parseInt(savedHeight);\n            currentWidth = parseInt(savedWidth);\n            currentImageSize = parseInt(savedImageSize);\n            \n            applySize();\n            applyImageSize();\n        };\n        \n        function adjustImageSize(value) {\n            currentImageSize = parseInt(value);\n            document.getElementById('imageValue').textContent = value + 'px';\n            localStorage.setItem('reportImageSize', value);\n            applyImageSize();\n        }\n        \n        function applyImageSize() {\n            const images = document.querySelectorAll('.car-image');\n            images.forEach(img => {\n                img.style.width = currentImageSize + 'px';\n                img.style.height = (currentImageSize * 0.67) + 'px';\n            });\n        }\n        \n        function adjustHeight(value) {\n            currentHeight = parseInt(value);\n            document.getElementById('heightValue').textContent = value + 'px';\n            localStorage.setItem('reportRowHeight', value);\n            applySize();\n        }\n        \n        function adjustWidth(value) {\n            currentWidth = parseInt(value);\n            document.getElementById('widthValue').textContent = value + 'px';\n            localStorage.setItem('reportRowWidth', value);\n            applySize();\n        }\n        \n        function applySize() {\n            const allCells = document.querySelectorAll('#reportTable td, #reportTable th');\n            \n            allCells.forEach(cell => {\n                if (cell.cellIndex === 0) {\n                    cell.style.paddingTop = currentHeight + 'px';\n                    cell.style.paddingBottom = currentHeight + 'px';\n                    cell.style.paddingLeft = '20px';\n                    cell.style.paddingRight = '20px';\n                } else {\n                    cell.style.padding = currentHeight + 'px ' + currentWidth + 'px';\n                }\n                \n                cell.style.verticalAlign = 'middle';\n                cell.style.height = 'auto';\n                cell.style.minHeight = (currentHeight * 2) + 'px';\n            });\n        }\n        \n        function openImageModal(src, title) {\n            const modal = document.getElementById('imageModal');\n            const modalImg = document.getElementById('modalImage');\n            const modalTitle = document.getElementById('modalTitle');\n            \n            modal.classList.add('active');\n            modalImg.src = src;\n            modalTitle.textContent = title;\n            \n            document.body.style.overflow = 'hidden';\n        }\n        \n        function closeImageModal() {\n            const modal = document.getElementById('imageModal');\n            modal.classList.remove('active');\n            document.body.style.overflow = 'auto';\n        }\n        \n        document.addEventListener('keydown', function(e) {\n            if (e.key === 'Escape') {\n                closeImageModal();\n            }\n        });\n        \n        function toggleEdit() {\n            isEditing = !isEditing;\n            const cells = document.querySelectorAll('td, th');\n            const btn = document.getElementById('editBtn');\n            \n            cells.forEach(cell => {\n                cell.contentEditable = isEditing;\n            });\n            \n            if (isEditing) {\n                btn.textContent = '✅ 完成';\n                btn.style.background = 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)';\n            } else {\n                btn.textContent = '✏️ 编辑';\n                btn.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';\n            }\n        }\n        \n        function transposeTable() {\n            const table = document.getElementById('reportTable');\n            const wrapper = document.getElementById('tableWrapper');\n            \n            if (!isTransposed) {\n                originalTableHTML = table.outerHTML;\n                \n                const rows = Array.from(table.rows);\n                const maxCols = Math.max(...rows.map(r => r.cells.length));\n                \n                let transposedHTML = '<table id=\"reportTable\">';\n                \n                for (let col = 0; col < maxCols; col++) {\n                    transposedHTML += '<tr>';\n                    for (let row = 0; row < rows.length; row++) {\n                        const cell = rows[row].cells[col];\n                        if (cell) {\n                            const tagName = (col === 0) ? 'th' : 'td';\n                            transposedHTML += '<' + tagName + '>' + cell.innerHTML + '</' + tagName + '>';\n                        }\n                    }\n                    transposedHTML += '</tr>';\n                }\n                \n                transposedHTML += '</table>';\n                wrapper.innerHTML = transposedHTML;\n                \n                setTimeout(() => {\n                    applySize();\n                    applyImageSize();\n                }, 50);\n                \n                document.getElementById('transposeBtn').textContent = '↩️ 还原';\n                isTransposed = true;\n            } else {\n                wrapper.innerHTML = originalTableHTML;\n                \n                setTimeout(() => {\n                    applySize();\n                    applyImageSize();\n                }, 50);\n                \n                document.getElementById('transposeBtn').textContent = '🔄 转置';\n                isTransposed = false;\n            }\n        }\n    </script>\n</body>\n</html>`;\n\nconst reportID = 'report_' + Date.now();\n\nreturn {\n  json: {\n    success: true,\n    reportID: reportID,\n    htmlContent: html,\n    createTime: new Date().toISOString(),\n    imageStats: mergedData.imageStats\n  }\n};"
+      },
+      "id": "594d3d39-e353-4e74-87d5-249cc5865819",
+      "name": "GenerateReport",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5872,
+        6752
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 从Google Sheets获取的数据\nconst items = $input.all();\n\n// 如果没有数据，返回空列表\nif (!items || items.length === 0) {\n  return {\n    json: {\n      success: true,\n      dialogues: [],\n      total: 0\n    }\n  };\n}\n\n// 处理每个对话记录\nconst dialogues = items.map(item => {\n  const data = item.json;\n  \n  // ⭐ 将tags字符串转换为数组（前端需要）\n  let tagsArray = [];\n  if (data.tags) {\n    tagsArray = data.tags.split(',').map(t => t.trim()).filter(t => t);\n  }\n  \n  // ⭐ 提取conversationHistory的最后一条AI回复作为preview\n  let preview = '暂无内容';\n  if (data.conversationHistory) {\n    const pairs = data.conversationHistory.split('----').filter(s => s.trim());\n    // 找最后一条AISpeak\n    for (let i = pairs.length - 1; i >= 0; i--) {\n      if (pairs[i].startsWith('AISpeak:')) {\n        preview = pairs[i].replace('AISpeak:', '').substring(0, 50);\n        if (pairs[i].replace('AISpeak:', '').length > 50) {\n          preview += '...';\n        }\n        break;\n      }\n    }\n  }\n  \n  return {\n    dialogueID: data.dialogueID,\n    title: data.title || '未命名对话',\n    tags: tagsArray,  // ⭐ 数组格式\n    createTime: data.createTime,\n    preview: preview,\n    status: data.status\n  };\n});\n\n// ⭐ 按createTime降序排序（最新的在前）\ndialogues.sort((a, b) => {\n  const timeA = new Date(a.createTime).getTime();\n  const timeB = new Date(b.createTime).getTime();\n  return timeB - timeA;  // 降序\n});\n\nreturn {\n  json: {\n    success: true,\n    dialogues: dialogues,\n    total: dialogues.length\n  }\n};"
+      },
+      "id": "e188bfd7-37d5-4158-8a17-4d4b2e9c3591",
+      "name": "GetDialogueList",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4496,
+        7024
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "7d072fe1-f8fb-46e6-b812-e81e33299c15",
+      "name": "统一响应",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        7040,
+        6864
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const originalData = $('处理AI响应').first().json;\nreturn {json: originalData.response};"
+      },
+      "id": "6c38f1d4-2283-46f7-ab79-c373c721f5a8",
+      "name": "格式化响应1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6528,
+        6480
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst userContent = data.userMessage.content;\n\nconst initialHistory = 'userSpeak:' + userContent + '----';\n\nreturn {\n  json: {\n    dialogueID: data.dialogueID,\n    userID: data.userID,\n    title: data.title,\n    tags: data.tags,\n    createTime: data.createTime,\n    status: data.status,\n    conversationHistory: initialHistory,\n    userMessage: data.userMessage,\n    aiMessage: data.aiMessage\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4784,
+        6304
+      ],
+      "id": "45837232-4a68-4cf0-8a33-e750026806bb",
+      "name": "初始化对话"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        5248,
+        6480
+      ],
+      "id": "a9212692-1743-4f98-89e0-7da3688229a4",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        5248,
+        6624
+      ],
+      "id": "c18c40bf-f03b-424c-a6de-30f573654031",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "Rq6VyJR7LeyTkMK8",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst conversationHistory = data.conversationHistory || '';\n\nconst pairs = conversationHistory.split('----').filter(s => s.trim());\nconst chatInput = [];\n\nfor (const pair of pairs) {\n  if (pair.startsWith('userSpeak:')) {\n    chatInput.push('用户: ' + pair.replace('userSpeak:', ''));\n  } else if (pair.startsWith('AISpeak:')) {\n    chatInput.push('助手: ' + pair.replace('AISpeak:', ''));\n  }\n}\n\n// ⭐ 判断是否是新对话的第一轮（只有一条userSpeak）\nconst isFirstMessage = pairs.length === 1 && pairs[0].startsWith('userSpeak:');\n\n// ⭐ 添加系统角色设定（所有对话都有）\nlet prompt = '【系统设定】你是一位专业的世界级汽车设计师助手，擅长分析车辆外观、内饰、性能等设计细节。请用简洁专业的语言回复，控制在50字以内。\\n\\n';\n\nprompt += chatInput.join('\\n');\n\nif (isFirstMessage) {\n  // ⭐ 第一轮对话，要求AI生成标题（用清晰的格式）\n  prompt += `\n\n【重要】请严格按以下格式回复，标题和正文之间用空行分隔：\n\n第一行：[为本次对话生成一个5-10字的简洁标题]\n\n第二行：空行\n\n第三行：[你的专业回复，要表现非常仔细，50字以内]\n\n示例格式：\n问界M7外观设计\n\n这辆车M7采用贯穿式头灯与极简型面，营造科技感，风阻系数优秀。`;\n} else {\n  // 后续对话，正常回复\n  prompt += '\\n\\n请以专业汽车设计师的角度和用户讨论，要表现的仔细（50字以内）：';\n}\n\nreturn {\n  json: {\n    conversationHistory: data.conversationHistory,\n    dialogueID: data.dialogueID,\n    userID: data.userID,\n    title: data.title,\n    tags: data.tags,\n    createTime: data.createTime,\n    status: data.status,\n    chatInput: prompt,\n    isFirstMessage: isFirstMessage\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5056,
+        6480
+      ],
+      "id": "42dd2252-6e4a-49e1-bcac-78c0cfcf6953",
+      "name": "转换为AI格式"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst aiResponse = data.output || '';\n\n// ⭐ 从\"转换为AI格式\"节点读取isFirstMessage\nconst convertData = $('转换为AI格式').first().json;\nconst isFirstMessage = convertData.isFirstMessage || false;\n\nconst conversationHistory = convertData.conversationHistory || '';\nlet finalTitle = convertData.title || '未命名对话';\nlet finalReply = aiResponse;\n\n// ⭐ 如果是第一条消息，提取标题\nif (isFirstMessage && aiResponse) {\n  // 按双换行符分割\n  const parts = aiResponse.split('\\n\\n');\n  \n  if (parts.length >= 2 && parts[0].trim()) {\n    finalTitle = parts[0].trim();\n    finalReply = parts.slice(1).join('\\n\\n').trim();\n  } else {\n    // Fallback\n    const userContent = conversationHistory.match(/userSpeak:(.+?)----/);\n    if (userContent && userContent[1]) {\n      finalTitle = userContent[1].substring(0, 20) + (userContent[1].length > 20 ? '...' : '');\n    }\n  }\n}\n\nconst updatedHistory = conversationHistory + 'AISpeak:' + finalReply + '----';\n\nconst messageID = 'msg_' + Date.now();\n\nconst tagsArray = convertData.tags ? convertData.tags.split(',').filter(t => t.trim()) : [];\n\nreturn {\n  json: {\n    dialogueID: convertData.dialogueID,\n    userID: convertData.userID,\n    title: finalTitle,\n    tags: convertData.tags,\n    createTime: convertData.createTime,\n    status: convertData.status,\n    conversationHistory: updatedHistory,\n    response: {\n      success: true,\n      dialogueID: convertData.dialogueID,\n      messageID: messageID,\n      aiReply: finalReply,\n      title: finalTitle,\n      extractedTags: tagsArray,\n      conversationHistory: updatedHistory\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5520,
+        6480
+      ],
+      "id": "32bf081e-6fff-41e8-b021-06f12ff7a7ac",
+      "name": "处理AI响应",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1586220630,
+          "mode": "list",
+          "cachedResultName": "AIDialogues",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=1586220630"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "userID": "={{ $json.userID }}",
+            "status": "={{ $json.status }}",
+            "dialogueID": "={{$json.dialogueID}}",
+            "title": "={{ $json.title && $json.title !== '未命名对话' ? $json.title : undefined }}",
+            "tags": "={{$json.tags}}",
+            "conversationHistory": "={{$json.conversationHistory}}",
+            "createTime": "={{$json.createTime}}"
+          },
+          "matchingColumns": [
+            "dialogueID"
+          ],
+          "schema": [
+            {
+              "id": "dialogueID",
+              "displayName": "dialogueID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "userID",
+              "displayName": "userID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tags",
+              "displayName": "tags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "conversationHistory",
+              "displayName": "conversationHistory",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "createTime",
+              "displayName": "createTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "bb299c95-f48e-44f2-9062-6b1aa062d940",
+      "name": "保存conversationHistory到表格",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        6080,
+        6480
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst existingHistory = data.conversationHistory || '';\nconst userContent = data.userMessage.content;\n\nconst updatedHistory = existingHistory + 'userSpeak:' + userContent + '----';\n\nreturn {\n  json: {\n    dialogueID: data.dialogueID,\n    userID: data.userID,\n    title: data.title,\n    tags: data.tags,\n    createTime: data.createTime,\n    status: data.status,\n    conversationHistory: updatedHistory\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4784,
+        6480
+      ],
+      "id": "72076b5e-778b-4311-ba48-a213f6bee1bd",
+      "name": "追加用户消息"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1586220630,
+          "mode": "list",
+          "cachedResultName": "AIDialogues",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=1586220630"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "dialogueID",
+              "lookupValue": "={{$json.data.dialogueID}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7527feb2-b72e-49a9-8d9f-00df699b2e52",
+      "name": "读取对话详情",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4288,
+        7248
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst sheetData = $('读取对话详情').first().json;\n\nconst dialogueID = sheetData.dialogueID || data.dialogueID;\nconst title = sheetData.title || '未命名对话';\nconst conversationHistory = sheetData.conversationHistory || '';\n\n// 解析conversationHistory为messages数组\nconst pairs = conversationHistory.split('----').filter(s => s.trim());\nconst messages = [];\n\nfor (const pair of pairs) {\n  if (pair.startsWith('userSpeak:')) {\n    messages.push({\n      role: 'user',\n      content: pair.replace('userSpeak:', ''),\n      timestamp: new Date().toISOString()\n    });\n  } else if (pair.startsWith('AISpeak:')) {\n    messages.push({\n      role: 'assistant',\n      content: pair.replace('AISpeak:', ''),\n      timestamp: new Date().toISOString()\n    });\n  }\n}\n\nreturn {\n  json: {\n    success: true,\n    dialogueID: dialogueID,\n    title: title,\n    conversationHistory: conversationHistory,\n    messages: messages,\n    totalMessages: messages.length\n  }\n};"
+      },
+      "id": "898547e3-0a4e-407e-997b-d9761e9ad799",
+      "name": "GetDialogueDetail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4496,
+        7248
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1586220630,
+          "mode": "list",
+          "cachedResultName": "AIDialogues",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=1586220630"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "userID",
+              "lookupValue": "={{$json.data.userID}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "47f974b4-70f8-44d4-a680-bc3e5a5106c1",
+      "name": "读取对话列表",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4288,
+        7024
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-analysis",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "f1bbbc68-c59e-4c18-8e2e-357ba2a2209c",
+      "name": "AI分析入口",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        3536,
+        6848
+      ],
+      "webhookId": "ai-analysis-webhook"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1586220630,
+          "mode": "list",
+          "cachedResultName": "AIDialogues",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=1586220630"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "dialogueID",
+              "lookupValue": "={{$json.data.dialogueID}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1742d82c-e4a8-42c6-b062-9abbb32716dc",
+      "name": "读取报告对话数据",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4288,
+        6752
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.analysisPrompt}}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        4688,
+        6752
+      ],
+      "id": "0d69aa7d-9fcf-40e3-ab34-4e2aa8ec47b1",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        4688,
+        6896
+      ],
+      "id": "d7b490b4-357d-4479-9f09-1525b5b35560",
+      "name": "DeepSeek Chat Model2",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "Rq6VyJR7LeyTkMK8",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 从Google Sheets读取的数据\nconst sheetData = $('读取报告对话数据').first().json;\n\nconst dialogueID = sheetData.dialogueID;\nconst title = sheetData.title || '对话分析';\nconst tags = sheetData.tags || '';\nconst conversationHistory = sheetData.conversationHistory || '';\n\n// 解析对话历史\nconst pairs = conversationHistory.split('----').filter(s => s.trim());\nconst dialogue = [];\n\nfor (const pair of pairs) {\n  if (pair.startsWith('userSpeak:')) {\n    dialogue.push('用户: ' + pair.replace('userSpeak:', ''));\n  } else if (pair.startsWith('AISpeak:')) {\n    dialogue.push('助手: ' + pair.replace('AISpeak:', ''));\n  }\n}\n\n// 构建AI分析prompt（⭐ 优化版：要求多层次描述）\nconst prompt = `你是一位专业的汽车分析师，需要根据以下对话生成一份车型对比报告。\n\n【对话内容】\n${dialogue.join('\\n')}\n\n【分析任务】\n请分析对话中提到的车型和对比维度，按以下JSON格式输出：\n\n\\`\\`\\`json\n{\n  \"vehicles\": [\n    {\"name\": \"车型名称1\"},\n    {\"name\": \"车型名称2\"}\n  ],\n  \"dimensions\": [\n    {\n      \"name\": \"对比维度（如：外观设计）\",\n      \"车型名称1\": {\n        \"label\": \"核心特点（5-8字）\",\n        \"desc1\": \"详细描述（15-20字）\",\n        \"desc2\": \"补充信息或亮点（15-20字）\"\n      },\n      \"车型名称2\": {\n        \"label\": \"核心特点\",\n        \"desc1\": \"详细描述\",\n        \"desc2\": \"补充信息或亮点\"\n      }\n    }\n  ]\n}\n\\`\\`\\`\n\n【重要规则】\n1. ⭐ 禁止使用\"未提及\"、\"未明确提及\"等词汇\n2. ⭐ 如果对话没有明确讨论某个维度，请根据车型定位、品牌特点、常识进行合理推断\n3. 例如：\n   - 腾势Z9（高端轿跑）→ 外观可推断\"GT跑车造型、贯穿式灯组、低风阻设计\"\n   - 问界M7（家用SUV）→ 空间可推断\"三排座椅布局、灵活储物、后备箱充裕\"\n4. 每个评价必须有实质内容，体现专业性和细节\n5. label要简洁有力，desc1/desc2要有层次感\n6. 只输出JSON，不要其他内容`;\n\nreturn {\n  json: {\n    dialogueID: dialogueID,\n    title: title,\n    tags: tags,\n    analysisPrompt: prompt\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4496,
+        6752
+      ],
+      "id": "c6c36ed0-8d24-4393-ab3f-fea2c9871ecc",
+      "name": "准备报告分析prompt"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 从AI Agent的输出中提取车型列表\nconst aiOutput = $input.item.json.output || '';\nconst promptData = $('准备报告分析prompt').first().json;\n\nlet vehicles = [];\n\ntry {\n  const jsonMatch = aiOutput.match(/```json\\s*([\\s\\S]+?)\\s*```/) || \n                    aiOutput.match(/\\{[\\s\\S]+\\}/);\n  \n  if (jsonMatch) {\n    const jsonStr = jsonMatch[1] || jsonMatch[0];\n    const reportData = JSON.parse(jsonStr);\n    vehicles = (reportData.vehicles || []).map(v => v.name);\n  }\n} catch (e) {\n  console.log('解析车型失败，使用默认值');\n  vehicles = ['车型1', '车型2'];\n}\n\n// 根据对话tags判断需要什么类型的图片\nconst tags = promptData.tags || '';\nlet filterCategory = 'all';\nlet filterViewType = 'all';\n\nif (tags.includes('外观') || tags.includes('外饰')) {\n  filterCategory = '外观';\n  filterViewType = 'view45';  // 默认45度角\n} else if (tags.includes('内饰')) {\n  filterCategory = '内饰';\n  filterViewType = 'viewCNSL';  // 中控台视角\n} else if (tags.includes('空间') || tags.includes('座椅')) {\n  filterCategory = '座椅';\n  filterViewType = 'viewDoor';\n}\n\nconsole.log(`提取到${vehicles.length}个车型:`, vehicles);\nconsole.log(`图片筛选 - 分类: ${filterCategory}, 视角: ${filterViewType}`);\n\nreturn {\n  json: {\n    ...promptData,\n    vehicles: vehicles,\n    filterCategory: filterCategory,\n    filterViewType: filterViewType,\n    aiOutput: aiOutput\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4992,
+        6752
+      ],
+      "id": "edcbf729-04b7-485a-aaf6-b4044a319fee",
+      "name": "提取车型列表"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 合并AI分析结果和图片数据\nconst extractData = $('提取车型列表').first().json;\nconst imageResponse = $input.first().json;\n\nconsole.log('=== 智能选图合并 ===');\nconsole.log('车型数量:', extractData.vehicles.length);\n\n// 处理图片API的返回（可能是单车型或多车型）\nlet imageResults = [];\nif (imageResponse.results) {\n  // 多车型返回\n  imageResults = imageResponse.results;\n} else if (imageResponse.images) {\n  // 单车型返回\n  imageResults = [imageResponse];\n}\n\nconsole.log('图片数据:', imageResults.length, '个车型');\n\n// 为每个车型匹配图片\nconst vehiclesWithImages = extractData.vehicles.map(carName => {\n  // 找到匹配的车型图片数据\n  const matchedData = imageResults.find(img => \n    img.carName && (\n      img.carName.includes(carName) || \n      carName.includes(img.carName) ||\n      img.inputCarName === carName\n    )\n  );\n  \n  if (matchedData && matchedData.images && matchedData.images.length > 0) {\n    // 优先使用第一张图片（已经按view_type筛选过了）\n    const selectedImage = matchedData.images[0];\n    console.log(`✅ ${carName} 匹配到图片: ${selectedImage.view_type}`);\n    \n    return {\n      name: carName,\n      imageUrl: selectedImage.url,\n      viewType: selectedImage.view_type,\n      category: selectedImage.category\n    };\n  } else {\n    // 没有匹配到，使用占位图\n    console.log(`⚠️ ${carName} 未匹配到图片，使用占位图`);\n    return {\n      name: carName,\n      imageUrl: 'https://via.placeholder.com/150x100/667eea/ffffff?text=' + encodeURIComponent(carName),\n      viewType: 'placeholder',\n      category: 'unknown'\n    };\n  }\n});\n\nreturn {\n  json: {\n    dialogueID: extractData.dialogueID,\n    title: extractData.title,\n    tags: extractData.tags,\n    analysisPrompt: extractData.analysisPrompt,\n    aiOutput: extractData.aiOutput,\n    vehicles: vehiclesWithImages,\n    imageStats: {\n      total: vehiclesWithImages.length,\n      matched: vehiclesWithImages.filter(v => v.viewType !== 'placeholder').length,\n      filterCategory: extractData.filterCategory,\n      filterViewType: extractData.filterViewType\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5408,
+        6752
+      ],
+      "id": "b16bd86c-52b2-4d3b-b162-720526fbf837",
+      "name": "智能选图合并"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lynn-cafa-system.app.n8n.cloud/webhook/get-car-images",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  carNames: $json.vehicles,\n  filterCategory: $json.filterCategory,\n  filterViewType: $json.filterViewType\n}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5184,
+        6752
+      ],
+      "id": "56222433-e177-4ab2-9fea-7836be56573b",
+      "name": "调用图片API (HTTP Request)1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst convertData = $('转换为AI格式').first().json;\nconst isFirstMessage = convertData.isFirstMessage || false;\n\nconsole.log('========== 准备写入 Google Sheets ==========');\nconsole.log('dialogueID:', data.dialogueID);\nconsole.log('isFirstMessage:', isFirstMessage);\nconsole.log('当前 title:', data.title);\n\n// ⭐ 策略：只有第一次对话才写入 title\n// 继续对话时，保持 title 为空（Google Sheets 不会更新该字段）\nlet finalTitle;\n\nif (isFirstMessage) {\n  // 新对话，写入 AI 生成的标题\n  finalTitle = data.title || '未命名对话';\n  console.log('✅ 新对话，写入 title:', finalTitle);\n} else {\n  // 继续对话，不传 title（保留 Google Sheets 原值）\n  finalTitle = undefined;\n  console.log('⏭️ 继续对话，跳过 title 更新');\n}\n\nconsole.log('=======================================');\n\nreturn {\n  json: {\n    dialogueID: data.dialogueID,\n    userID: data.userID,\n    title: finalTitle,  // ⭐ 关键：继续对话时为 undefined\n    tags: data.tags,\n    conversationHistory: data.conversationHistory,\n    createTime: data.createTime,\n    status: data.status,\n    // 同时返回 response 给前端\n    response: data.response\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5728,
+        6480
+      ],
+      "id": "be167702-94da-44f9-9bb5-83d4390b299e",
+      "name": "准备写入数据"
+    }
+  ],
+  "connections": {
+    "Router": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "ProcessMessage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "读取报告对话数据",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "读取对话列表",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "读取对话详情",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ProcessMessage": {
+      "main": [
+        [
+          {
+            "node": "判断是否新对话",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "判断是否新对话": {
+      "main": [
+        [
+          {
+            "node": "初始化对话",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "追加用户消息",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GenerateReport": {
+      "main": [
+        [
+          {
+            "node": "统一响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetDialogueList": {
+      "main": [
+        [
+          {
+            "node": "统一响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "格式化响应1": {
+      "main": [
+        [
+          {
+            "node": "统一响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "初始化对话": {
+      "main": [
+        [
+          {
+            "node": "转换为AI格式",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "处理AI响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "转换为AI格式": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "处理AI响应": {
+      "main": [
+        [
+          {
+            "node": "准备写入数据",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "保存conversationHistory到表格": {
+      "main": [
+        [
+          {
+            "node": "格式化响应1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "追加用户消息": {
+      "main": [
+        [
+          {
+            "node": "转换为AI格式",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "读取对话详情": {
+      "main": [
+        [
+          {
+            "node": "GetDialogueDetail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetDialogueDetail": {
+      "main": [
+        [
+          {
+            "node": "统一响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "读取对话列表": {
+      "main": [
+        [
+          {
+            "node": "GetDialogueList",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI分析入口": {
+      "main": [
+        [
+          {
+            "node": "Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "读取报告对话数据": {
+      "main": [
+        [
+          {
+            "node": "准备报告分析prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "提取车型列表",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备报告分析prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "提取车型列表": {
+      "main": [
+        [
+          {
+            "node": "调用图片API (HTTP Request)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "智能选图合并": {
+      "main": [
+        [
+          {
+            "node": "GenerateReport",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "调用图片API (HTTP Request)1": {
+      "main": [
+        [
+          {
+            "node": "智能选图合并",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备写入数据": {
+      "main": [
+        [
+          {
+            "node": "保存conversationHistory到表格",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5cb72472896fce0666bc03ef84936c4f09ec11e6b4f95f9aebe3d538947c7935"
+  }
+}

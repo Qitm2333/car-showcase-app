@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI对话分析系统 - 完整版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .main-container {
+            display: flex;
+            height: 100vh;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* 左侧：历史对话列表 */
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .sidebar-header h2 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            padding: 10px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .new-chat-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .dialogue-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .dialogue-item {
+            padding: 15px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .dialogue-item:hover {
+            background: #e9ecef;
+        }
+
+        .dialogue-item.active {
+            background: #e3e8ff;
+            border-color: #667eea;
+        }
+
+        .dialogue-item h3 {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .dialogue-item p {
+            font-size: 12px;
+            color: #999;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .dialogue-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .dialogue-tag {
+            font-size: 10px;
+            padding: 2px 8px;
+            background: #667eea;
+            color: white;
+            border-radius: 10px;
+        }
+
+        /* 中间：聊天区域 */
+        .chat-area {
+            flex: 1;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-title h2 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .chat-title p {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .generate-report-btn {
+            padding: 10px 20px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .generate-report-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .input-area input:focus {
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 右侧：调试工具 */
+        .debug-panel {
+            width: 350px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .debug-header {
+            padding: 20px;
+            background: #2c3e50;
+            color: white;
+        }
+
+        .debug-header h2 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .debug-config {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .debug-config label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .debug-config input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .save-config-btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 5px;
+        }
+
+        .save-config-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
+        }
+
+        .save-config-btn:active {
+            transform: translateY(0);
+        }
+
+        .debug-logs {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+        }
+
+        .log-entry {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .log-entry.error {
+            border-left-color: #e74c3c;
+        }
+
+        .log-entry.success {
+            border-left-color: #2ecc71;
+        }
+
+        .log-time {
+            color: #999;
+            font-size: 10px;
+        }
+
+        .log-content {
+            color: #333;
+            margin-top: 5px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- 左侧：对话列表 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>💬 对话历史</h2>
+                <button class="new-chat-btn" onclick="startNewChat()">➕ 新对话</button>
+            </div>
+            <div class="dialogue-list" id="dialogueList">
+                <div class="empty-state">
+                    <p>暂无对话历史</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间：聊天区域 -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <h2 id="currentTitle">🚗 AI车型分析助手</h2>
+                    <p id="currentTags">请开始对话</p>
+                </div>
+                <button class="generate-report-btn" onclick="generateReport()" id="generateBtn">
+                    📊 生成报告
+                </button>
+            </div>
+            <div class="messages" id="messages">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <p>开始新的对话吧！</p>
+                </div>
+            </div>
+            <div class="input-area">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="输入您的问题，例如：请帮我分析问界M7的外观..." 
+                    onkeypress="handleKeyPress(event)"
+                >
+                <button class="send-btn" onclick="sendMessage()" id="sendBtn">发送</button>
+            </div>
+        </div>
+
+        <!-- 右侧：调试工具 -->
+        <div class="debug-panel">
+            <div class="debug-header">
+                <h2>🛠️ 调试工具</h2>
+            </div>
+            <div class="debug-config">
+                <label>Webhook URL:</label>
+                <input 
+                    type="text" 
+                    id="webhookURL" 
+                    value="https://lynn-cafa-system.app.n8n.cloud/webhook/ai-analysis"
+                    placeholder="输入N8N Webhook地址"
+                >
+                <label>User ID:</label>
+                <input 
+                    type="text" 
+                    id="userID" 
+                    value="testCode"
+                    placeholder="输入用户ID"
+                >
+                <button class="save-config-btn" onclick="saveConfig()">💾 保存配置</button>
+            </div>
+            <div class="debug-logs" id="debugLogs">
+                <div class="log-entry">
+                    <div class="log-time">[系统启动]</div>
+                    <div class="log-content">调试工具已就绪</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 全局状态 ==========
+        let currentDialogueID = null;
+        let currentTitle = ''; // ⭐ 新增：维护当前对话标题
+        let conversationHistory = ''; // ⭐ 新增：维护conversationHistory
+        let dialogues = [];
+        let messages = [];
+
+        // ========== 工具函数 ==========
+        function getWebhookURL() {
+            return document.getElementById('webhookURL').value;
+        }
+
+        function getUserID() {
+            return document.getElementById('userID').value;
+        }
+
+        // ⭐ 保存配置到localStorage
+        function saveConfig() {
+            const webhookURL = document.getElementById('webhookURL').value.trim();
+            const userID = document.getElementById('userID').value.trim();
+
+            if (!webhookURL) {
+                alert('❌ Webhook URL不能为空！');
+                return;
+            }
+
+            if (!userID) {
+                alert('❌ User ID不能为空！');
+                return;
+            }
+
+            // 保存到localStorage
+            localStorage.setItem('n8n_webhook_url', webhookURL);
+            localStorage.setItem('n8n_user_id', userID);
+
+            addLog('✅ 配置已保存！\nWebhook: ' + webhookURL + '\nUser ID: ' + userID, 'success');
+            alert('✅ 配置保存成功！');
+        }
+
+        // ⭐ 从localStorage加载配置
+        function loadConfig() {
+            const savedWebhookURL = localStorage.getItem('n8n_webhook_url');
+            const savedUserID = localStorage.getItem('n8n_user_id');
+
+            if (savedWebhookURL) {
+                document.getElementById('webhookURL').value = savedWebhookURL;
+                addLog('📥 已加载保存的Webhook URL');
+            }
+
+            if (savedUserID) {
+                document.getElementById('userID').value = savedUserID;
+                addLog('📥 已加载保存的User ID');
+            }
+        }
+
+        function addLog(message, type = 'info') {
+            const logsContainer = document.getElementById('debugLogs');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            
+            const time = new Date().toLocaleTimeString('zh-CN');
+            logEntry.innerHTML = `
+                <div class="log-time">[${time}]</div>
+                <div class="log-content">${message}</div>
+            `;
+            
+            logsContainer.appendChild(logEntry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        function addMessage(role, content) {
+            const messagesContainer = document.getElementById('messages');
+            
+            // 移除空状态
+            const emptyState = messagesContainer.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            messageDiv.innerHTML = `
+                <div class="message-content">${content}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function updateDialogueList(dialogueList) {
+            const listContainer = document.getElementById('dialogueList');
+            
+            if (dialogueList.length === 0) {
+                listContainer.innerHTML = '<div class="empty-state"><p>暂无对话历史</p></div>';
+                return;
+            }
+
+            listContainer.innerHTML = dialogueList.map(dlg => {
+                // ⭐ 兼容tags的多种格式（数组/字符串/空）
+                let tagsArray = [];
+                if (Array.isArray(dlg.tags)) {
+                    tagsArray = dlg.tags;
+                } else if (typeof dlg.tags === 'string' && dlg.tags) {
+                    tagsArray = dlg.tags.split(',').map(t => t.trim()).filter(t => t);
+                }
+                
+                return `
+                    <div class="dialogue-item ${dlg.dialogueID === currentDialogueID ? 'active' : ''}" 
+                         onclick="selectDialogue('${dlg.dialogueID}')">
+                        <h3>${dlg.title}</h3>
+                        <p>${dlg.preview || '暂无内容'}</p>
+                        <div class="dialogue-tags">
+                            ${tagsArray.map(tag => `<span class="dialogue-tag">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ========== API 调用 ==========
+        async function callAPI(action, data) {
+            const url = getWebhookURL();
+            const userID = getUserID();
+
+            const payload = {
+                action: action,
+                userID: userID,
+                ...data
+            };
+
+            addLog(`📤 发送请求: ${action}\n${JSON.stringify(payload, null, 2)}`);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                addLog(`📥 收到响应:\n${JSON.stringify(result, null, 2)}`, 'success');
+                return result;
+            } catch (error) {
+                addLog(`❌ 请求失败: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        // ========== 功能实现 ==========
+        async function loadDialogueList() {
+            try {
+                const result = await callAPI('getDialogueList', {});
+                if (result.success) {
+                    dialogues = result.dialogues;
+                    updateDialogueList(dialogues);
+                }
+            } catch (error) {
+                console.error('加载对话列表失败:', error);
+            }
+        }
+
+        async function selectDialogue(dialogueID) {
+            try {
+                currentDialogueID = dialogueID;
+                
+                // 更新UI
+                const dialogue = dialogues.find(d => d.dialogueID === dialogueID);
+                if (dialogue) {
+                    document.getElementById('currentTitle').textContent = dialogue.title;
+                    
+                    // ⭐ 兼容tags的多种格式
+                    let tagsArray = [];
+                    if (Array.isArray(dialogue.tags)) {
+                        tagsArray = dialogue.tags;
+                    } else if (typeof dialogue.tags === 'string' && dialogue.tags) {
+                        tagsArray = dialogue.tags.split(',').map(t => t.trim()).filter(t => t);
+                    }
+                    document.getElementById('currentTags').textContent = tagsArray.length > 0 ? tagsArray.join(', ') : '暂无标签';
+                }
+
+                updateDialogueList(dialogues);
+
+                // 加载对话详情
+                const result = await callAPI('getDialogueDetail', { dialogueID: dialogueID });
+                if (result.success) {
+                    // ⭐ 获取并缓存title
+                    if (result.title) {
+                        currentTitle = result.title;
+                        addLog('📥 加载标题: ' + result.title);
+                    }
+                    
+                    // ⭐ 获取并缓存conversationHistory
+                    if (result.conversationHistory) {
+                        conversationHistory = result.conversationHistory;
+                        addLog('📥 加载conversationHistory: ' + conversationHistory.substring(0, 50) + '...');
+                    }
+
+                    // 解析并显示消息
+                    messages = result.messages || [];
+                    
+                    const messagesContainer = document.getElementById('messages');
+                    messagesContainer.innerHTML = '';
+                    
+                    messages.forEach(msg => {
+                        addMessage(msg.role, msg.content);
+                    });
+                }
+            } catch (error) {
+                console.error('加载对话详情失败:', error);
+            }
+        }
+
+        function startNewChat() {
+            currentDialogueID = null;
+            currentTitle = ''; // ⭐ 清空标题
+            conversationHistory = ''; // ⭐ 清空历史
+            messages = [];
+            
+            document.getElementById('currentTitle').textContent = '🚗 AI车型分析助手';
+            document.getElementById('currentTags').textContent = '请开始对话';
+            
+            const messagesContainer = document.getElementById('messages');
+            messagesContainer.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><p>开始新的对话吧！</p></div>';
+            
+            updateDialogueList(dialogues);
+            
+            addLog('🆕 开始新对话');
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            
+            if (!content) {
+                addLog('⚠️ 消息内容为空', 'error');
+                return;
+            }
+
+            // 禁用输入
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="loading"></span>';
+
+            // 乐观更新：立即显示用户消息
+            addMessage('user', content);
+            input.value = '';
+
+            try {
+                const result = await callAPI('sendMessage', {
+                    dialogueID: currentDialogueID,
+                    title: currentTitle, // ⭐ 传递当前标题
+                    conversationHistory: conversationHistory, // ⭐ 传递历史
+                    content: content
+                });
+
+                if (result.success) {
+                    // 显示AI回复
+                    addMessage('assistant', result.aiReply);
+
+                    // ⭐ 更新conversationHistory
+                    if (result.conversationHistory) {
+                        conversationHistory = result.conversationHistory;
+                        addLog('📝 conversationHistory已更新');
+                    }
+
+                    // ⭐ 更新标题（只在第一次或标题变化时）
+                    if (result.title && result.title !== '未命名对话') {
+                        currentTitle = result.title;
+                        document.getElementById('currentTitle').textContent = result.title;
+                        addLog('📝 标题已更新: ' + result.title);
+                    }
+                    
+                    // ⭐ 更新标签
+                    if (result.extractedTags && result.extractedTags.length > 0) {
+                        document.getElementById('currentTags').textContent = result.extractedTags.join(', ');
+                    }
+
+                    // 如果是新对话，更新对话列表
+                    if (!currentDialogueID) {
+                        currentDialogueID = result.dialogueID;
+                        
+                        // 乐观更新对话列表
+                        dialogues.unshift({
+                            dialogueID: result.dialogueID,
+                            title: currentTitle,
+                            tags: result.extractedTags,
+                            createTime: new Date().toISOString(),
+                            preview: content
+                        });
+                        updateDialogueList(dialogues);
+                    }
+                }
+            } catch (error) {
+                console.error('发送消息失败:', error);
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '发送';
+            }
+        }
+
+        async function generateReport() {
+            if (!currentDialogueID) {
+                alert('❌ 请先开始一个对话\n\n提示：在输入框发送消息后，即可生成报告');
+                addLog('⚠️ 生成报告失败：没有活动对话', 'error');
+                return;
+            }
+
+            // ⭐ 检查对话内容
+            if (!conversationHistory || conversationHistory.trim().length === 0) {
+                alert('⚠️ 对话内容为空\n\n请先与AI进行几轮对话，讨论您想对比的车型');
+                addLog('⚠️ 生成报告失败：对话内容为空', 'error');
+                return;
+            }
+
+            const generateBtn = document.getElementById('generateBtn');
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<span class="loading"></span> 生成中...';
+            
+            addLog('📊 开始生成报告，dialogueID: ' + currentDialogueID);
+
+            try {
+                const result = await callAPI('generateReport', {
+                    dialogueID: currentDialogueID
+                });
+
+                if (result.success) {
+                    addLog('✅ 报告生成成功！报告ID: ' + result.reportID, 'success');
+                    const newWindow = window.open('', '_blank');
+                    if (newWindow) {
+                        newWindow.document.write(result.htmlContent);
+                        newWindow.document.close();
+                        alert('✅ 报告已在新窗口打开\n\n提示：您可以使用浏览器的打印功能保存为PDF');
+                    } else {
+                        alert('❌ 无法打开新窗口\n\n请允许浏览器弹出窗口权限');
+                        addLog('⚠️ 弹出窗口被阻止', 'error');
+                    }
+                } else {
+                    alert('❌ 报告生成失败\n\n' + (result.error || '未知错误'));
+                    addLog('❌ 报告生成失败: ' + (result.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                console.error('生成报告失败:', error);
+                alert('❌ 生成报告失败\n\n' + error.message + '\n\n请查看调试日志');
+                addLog('❌ 请求失败: ' + error.message, 'error');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = '📊 生成报告';
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // ========== 初始化 ==========
+        window.onload = () => {
+            loadConfig();  // ⭐ 先加载保存的配置
+            addLog('🚀 系统初始化完成');
+            loadDialogueList();
+        };
+    </script>
+</body>
+</html>
+

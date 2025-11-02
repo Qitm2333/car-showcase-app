@@ -1,0 +1,248 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "id": "d5de46a0-78a3-4788-8991-dddda158e616",
+      "name": "返回结果",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        5632,
+        4160
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "car-detail-complete",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*, null"
+        }
+      },
+      "id": "127ea067-ec9c-4d8c-8b68-0e8a5f9a5707",
+      "name": "详细界面",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        3488,
+        4160
+      ],
+      "webhookId": "car-detail-complete"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "你是汽车专家，请用简洁专业的方式介绍车辆。格式要求：\n1. 车型定位(SUV/轿车等)\n2. 核心设计特点\n3. 相关竞品\n4. 3个核心亮点\n总字数100字内。"
+        }
+      },
+      "id": "bc7b4c60-2d8e-449c-9e5c-a1fd70901b12",
+      "name": "AI智能体1",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        4656,
+        4160
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "df4bba87-ef95-4523-8107-080d49359ed8",
+      "name": "DeepSeek Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        4656,
+        4416
+      ],
+      "credentials": {
+        "deepSeekApi": {
+          "id": "Rq6VyJR7LeyTkMK8",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 整合AI分析结果\nconst carData = $('处理所有逻辑2').item.json;\nlet aiAnalysis = '';\nlet smartTags = [];\n\nconsole.log('===== 整合最终结果 =====');\nconsole.log('车辆数据:', carData);\nconsole.log('相关车型数量:', carData.relatedCars ? carData.relatedCars.length : 0);\n\ntry {\n  const aiResponse = $input.item.json;\n  let rawOutput = '';\n  \n  if (aiResponse && aiResponse.output) {\n    rawOutput = aiResponse.output;\n  } else if (aiResponse && aiResponse.text) {\n    rawOutput = aiResponse.text;\n  }\n  \n  console.log('AI原始输出:', rawOutput);\n  \n  if (rawOutput) {\n    // 解析AI输出：第一行是标签，后面是分析内容\n    const lines = rawOutput.split('\\n').filter(line => line.trim());\n    \n    if (lines.length >= 2) {\n      // 第一行作为标签\n      const tagLine = lines[0];\n      const tagArray = tagLine.split(/[,，、]/).map(tag => tag.trim()).filter(tag => tag);\n      smartTags = tagArray.slice(0, 5);\n      \n      // 第二行开始作为分析内容\n      aiAnalysis = lines.slice(1).join(' ');\n    } else if (lines.length === 1) {\n      // 只有一行，尝试判断是标签还是内容\n      const line = lines[0];\n      if (line.length < 30 && (line.indexOf(',') !== -1 || line.indexOf('，') !== -1)) {\n        // 短且有逗号，可能是标签\n        smartTags = line.split(/[,，、]/).map(tag => tag.trim()).filter(tag => tag).slice(0, 5);\n        aiAnalysis = '智能分析中...';\n      } else {\n        // 长文本，当作分析内容\n        aiAnalysis = line;\n      }\n    } else {\n      aiAnalysis = rawOutput;\n    }\n  } else {\n    aiAnalysis = '暂无AI分析';\n  }\n} catch (e) {\n  console.log('AI分析解析失败:', e.message);\n  aiAnalysis = '车辆信息获取中...';\n}\n\n// 如果没有标签，提供默认标签\nif (smartTags.length === 0) {\n  smartTags = ['品质之选', '设计美学', '智能科技'];\n}\n\nconsole.log('解析后-AI分析:', aiAnalysis);\nconsole.log('解析后-智能标签:', smartTags);\n\n// 输出相关车型信息用于调试\nif (carData.relatedCars && carData.relatedCars.length > 0) {\n  console.log('准备返回的相关车型:');\n  carData.relatedCars.forEach((car, idx) => {\n    console.log(`  ${idx + 1}. ${car.carName} - ${car.carPriceRange}`);\n  });\n}\n\nconst finalResult = {\n  success: true,\n  data: {\n    carName: carData.carName,\n    carPriceRange: carData.carPriceRange,\n    vehicleClass: carData.vehicleClass,\n    carID: carData.carID,\n    brandID: carData.brandID,\n    mainImageUrl: carData.mainImageUrl,\n    aiAnalysis: aiAnalysis,\n    smartTags: smartTags,\n    relatedCars: carData.relatedCars || [],\n    detailImages: carData.detailImages || [],\n    stats: carData.stats || {}\n  },\n  timestamp: new Date().toISOString()\n};\n\nconsole.log('最终返回数据.relatedCars数量:', finalResult.data.relatedCars.length);\n\nreturn {\n  json: finalResult\n};"
+      },
+      "id": "4948b04b-f12e-4206-b0b6-eecfbda490f1",
+      "name": "整合最终结果1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5152,
+        4160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 解析请求参数\nconst input = $input.item.json.body || $input.item.json;\nconst carName = (input.carName || '').trim();\n\nif (!carName) {\n  return {\n    json: {\n      success: false,\n      error: '请提供汽车名称'\n    }\n  };\n}\n\nconsole.log('查询汽车:', carName);\n\nreturn { \n  json: { \n    carName: carName\n  } \n};"
+      },
+      "id": "d1e49a43-965c-4b4c-8685-9d78ca611a92",
+      "name": "解析参数2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3824,
+        4160
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ",
+          "mode": "list",
+          "cachedResultName": "CarSheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1550254241,
+          "mode": "list",
+          "cachedResultName": "CarImageURLMVP用",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mjs9hbxuETgarWLqKlHxhK3XQHKG2E6BmkpMs6RUghQ/edit#gid=1550254241"
+        },
+        "options": {}
+      },
+      "id": "1f0bb761-0969-417f-a400-32f025691044",
+      "name": "读取GoogleSheet2",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        4016,
+        4160
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YS5a72jpKHezwxcc",
+          "name": "Google Sheets account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 处理所有数据并返回结果\nconst targetCarName = $('解析参数2').item.json.carName;\nconst allData = $input.all();\n\nconsole.log('===== 开始处理 =====');\nconsole.log('目标车型:', targetCarName);\nconsole.log('总数据量:', allData.length);\n\n// 标准化函数：去掉空格、短横线、下划线\nfunction normalize(str) {\n  if (!str) return '';\n  return str.toLowerCase()\n    .split(' ').join('')\n    .split('-').join('')\n    .split('_').join('');\n}\n\nconst normalizedTarget = normalize(targetCarName);\nconsole.log('标准化搜索词:', normalizedTarget);\n\n// 1. 筛选当前车型的所有数据（多级匹配）\nlet carData = [];\nlet matchType = '';\n\n// 第一级：精确匹配\ncarData = allData.filter(item => {\n  const dbCarName = item.json.carName || '';\n  const normalizedDb = normalize(dbCarName);\n  return normalizedDb === normalizedTarget;\n});\n\nif (carData.length > 0) {\n  matchType = '精确匹配';\n} else {\n  // 第二级：包含匹配（长度控制，避免海豹匹配到海豹06）\n  console.log('精确匹配失败，尝试包含匹配...');\n  \n  carData = allData.filter(item => {\n    const dbCarName = item.json.carName || '';\n    const normalizedDb = normalize(dbCarName);\n    \n    // 数据库名称包含搜索词（如：腾势汽车-腾势N7 包含 腾势N7）\n    if (normalizedDb.indexOf(normalizedTarget) !== -1) {\n      const lengthDiff = normalizedDb.length - normalizedTarget.length;\n      // 允许数据库名称比搜索词长（品牌前缀等），但不能太长\n      if (lengthDiff >= 0 && lengthDiff <= 10) {\n        return true;\n      }\n    }\n    \n    // 搜索词包含数据库名称（反向匹配）\n    if (normalizedTarget.indexOf(normalizedDb) !== -1) {\n      const lengthRatio = normalizedDb.length / normalizedTarget.length;\n      if (lengthRatio >= 0.7) {\n        return true;\n      }\n    }\n    \n    return false;\n  });\n  \n  if (carData.length > 0) {\n    matchType = '包含匹配';\n  }\n}\n\n// 第三级：部分关键词匹配（如果前两级都失败）\nif (carData.length === 0) {\n  console.log('包含匹配失败，尝试关键词匹配...');\n  \n  // 提取搜索词中的关键词（去掉品牌名等）\n  const keywords = normalizedTarget.split(/[^a-z0-9\\u4e00-\\u9fa5]+/).filter(k => k.length > 1);\n  \n  carData = allData.filter(item => {\n    const dbCarName = item.json.carName || '';\n    const normalizedDb = normalize(dbCarName);\n    \n    // 检查是否包含所有关键词\n    return keywords.every(keyword => normalizedDb.indexOf(keyword) !== -1);\n  });\n  \n  if (carData.length > 0) {\n    matchType = '关键词匹配';\n  }\n}\n\nconsole.log('匹配类型:', matchType);\nconsole.log('匹配结果:', carData.length, '条');\n\nif (carData.length === 0) {\n  console.log('未找到匹配');\n  console.log('搜索词:', targetCarName);\n  console.log('标准化:', normalizedTarget);\n  return {\n    json: {\n      success: false,\n      error: '未找到车型: ' + targetCarName\n    }\n  };\n}\n\nconsole.log('实际车名:', carData[0].json.carName);\n\n// 2. 提取基本信息\nconst baseInfo = carData[0].json;\nconst carName = baseInfo.carName;\nconst carPriceRange = baseInfo.carPriceRange;\nconst vehicleClass = baseInfo.vehicleClass;\nconst carID = baseInfo.carID;\nconst brandID = baseInfo.brandID;\n\n// 3. 查找view45主图\nconst mainImage = carData.find(item => \n  item.json.viewType === 'view45' && item.json.category === '外观'\n);\nconst mainImageUrl = mainImage ? mainImage.json.imageURL : (carData[0].json.imageURL || '');\n\n// 4. 收集所有详细图片\nconst detailImages = carData.map(item => ({\n  url: item.json.imageURL,\n  category: item.json.category || '外观',\n  viewType: item.json.viewType || 'unknown'\n})).filter(img => img.url);\n\nconsole.log('主图:', mainImageUrl);\nconsole.log('详细图片数量:', detailImages.length);\n\n// 5. 查找相关车型\nfunction extractPriceRange(priceStr) {\n  if (!priceStr) return null;\n  const matches = priceStr.match(/([\\d.]+)/g);\n  if (!matches || matches.length < 2) return null;\n  const min = parseFloat(matches[0]);\n  const max = parseFloat(matches[1]);\n  return { min: min, max: max, avg: (min + max) / 2 };\n}\n\nconst currentPrice = extractPriceRange(carPriceRange);\nconst uniqueCars = new Map();\n\n// 去重并收集其他车型（排除当前车型）\nallData.forEach(item => {\n  const name = item.json.carName;\n  const id = item.json.carID;\n  if (!uniqueCars.has(name) && name !== carName) {\n    uniqueCars.set(name, {\n      carName: name,\n      carID: id,\n      carPriceRange: item.json.carPriceRange,\n      vehicleClass: item.json.vehicleClass,\n      brandID: item.json.brandID\n    });\n  }\n});\n\nconsole.log('其他车型数量:', uniqueCars.size);\n\n// 计算相关度\nconst relatedCars = [];\nfor (const [name, car] of uniqueCars) {\n  let score = 0;\n  \n  // 车型分类匹配\n  if (car.vehicleClass === vehicleClass) {\n    score += 40;\n  } else if (car.vehicleClass && vehicleClass && \n             car.vehicleClass.indexOf(vehicleClass.substring(0, 3)) !== -1) {\n    score += 20;\n  }\n  \n  // 价格相似度\n  if (currentPrice && car.carPriceRange) {\n    const carPrice = extractPriceRange(car.carPriceRange);\n    if (carPrice) {\n      const priceDiff = Math.abs(currentPrice.avg - carPrice.avg);\n      const priceScore = Math.max(0, 60 - (priceDiff * 3));\n      score += priceScore;\n    }\n  }\n  \n  if (score > 20) {\n    relatedCars.push({\n      carName: car.carName,\n      carID: car.carID,\n      carPriceRange: car.carPriceRange,\n      vehicleClass: car.vehicleClass,\n      brandID: car.brandID,\n      relevanceScore: score\n    });\n  }\n}\n\nrelatedCars.sort((a, b) => b.relevanceScore - a.relevanceScore);\nconst topRelated = relatedCars.slice(0, 6);\n\nconsole.log('相关车型数量:', topRelated.length);\nif (topRelated.length > 0) {\n  console.log('相关车型列表:');\n  topRelated.forEach((car, idx) => {\n    console.log(`  ${idx + 1}. ${car.carName} - ${car.carPriceRange} (分数: ${car.relevanceScore})`);\n  });\n}\nconsole.log('===== 处理完成 =====');\n\n// 6. 返回完整数据和AI输入\nreturn {\n  json: {\n    carName: carName,\n    carPriceRange: carPriceRange,\n    vehicleClass: vehicleClass,\n    carID: carID,\n    brandID: brandID,\n    mainImageUrl: mainImageUrl,\n    relatedCars: topRelated,\n    detailImages: detailImages,\n    stats: {\n      totalImages: detailImages.length,\n      relatedCarsCount: topRelated.length\n    },\n    chatInput: '请分析车型【' + carName + '】，严格按以下格式输出：\\n\\n第一行：写3-5个核心亮点关键词，用逗号分隔（如：刀片电池,海洋美学,智能座舱）\\n第二行：作为资深设计师，用50字内阐述该车的设计美学特点\\n\\n注意：第一行只写关键词，第二行才是分析内容，不要返回其他内容！'\n  }\n};"
+      },
+      "id": "1fe2dbe8-382a-423a-8db5-b5b697d97eb1",
+      "name": "处理所有逻辑2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4272,
+        4160
+      ]
+    }
+  ],
+  "connections": {
+    "详细界面": {
+      "main": [
+        [
+          {
+            "node": "解析参数2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI智能体1": {
+      "main": [
+        [
+          {
+            "node": "整合最终结果1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI智能体1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整合最终结果1": {
+      "main": [
+        [
+          {
+            "node": "返回结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解析参数2": {
+      "main": [
+        [
+          {
+            "node": "读取GoogleSheet2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "读取GoogleSheet2": {
+      "main": [
+        [
+          {
+            "node": "处理所有逻辑2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "处理所有逻辑2": {
+      "main": [
+        [
+          {
+            "node": "AI智能体1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5cb72472896fce0666bc03ef84936c4f09ec11e6b4f95f9aebe3d538947c7935"
+  }
+}

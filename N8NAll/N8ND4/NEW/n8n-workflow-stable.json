@@ -1,0 +1,399 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-analysis",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      "name": "Webhook入口",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        3264,
+        6816
+      ],
+      "webhookId": "ai-analysis-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const action = $input.item.json.body.action;\nreturn {json: {action: action, data: $input.item.json.body}};"
+      },
+      "id": "b2c3d4e5-f6a7-8901-2345-678901bcdefg",
+      "name": "Router",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3504,
+        6816
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "sendMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "sendMessage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "generateReport",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-2"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "generateReport"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "getDialogueList",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-3"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "getDialogueList"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "getDialogueDetail",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-4"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "getDialogueDetail"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c3d4e5f6-a7b8-9012-3456-789012cdefgh",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        3744,
+        6800
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json.data;\nconst content = data.content || '';\nconst dialogueID = data.dialogueID || 'dlg_' + Date.now();\nconst userID = data.userID || 'testCode';\nconst isNewDialogue = !data.dialogueID;\n\nconst keywords = ['外观','内饰','性能','续航','空间','配置','智能化','价格','安全','舒适'];\nconst extractedTags = keywords.filter(k => content.includes(k));\n\nlet title = '';\nif (extractedTags.length > 0) {\n  title = extractedTags.join('、') + '对比分析';\n} else {\n  title = content.slice(0, 20) + (content.length > 20 ? '...' : '');\n}\n\nlet aiReply = '好的，我理解了您的需求。';\nif (extractedTags.length > 0) {\n  aiReply += '我将重点关注' + extractedTags.join('、') + '这些方面。';\n} else {\n  aiReply += '请告诉我您关心的对比维度，比如外观、内饰、性能等。';\n}\n\nconst timestamp = new Date().toISOString();\nconst messageID_user = 'msg_' + Date.now() + '_user';\nconst messageID_ai = 'msg_' + (Date.now() + 1) + '_ai';\n\nreturn {\n  json: {\n    dialogueID: dialogueID,\n    userID: userID,\n    title: title,\n    tags: extractedTags.join(','),\n    createTime: timestamp,\n    status: 'active',\n    isNewDialogue: isNewDialogue,\n    userMessage: {\n      messageID: messageID_user,\n      dialogueID: dialogueID,\n      role: 'user',\n      content: content,\n      timestamp: timestamp\n    },\n    aiMessage: {\n      messageID: messageID_ai,\n      dialogueID: dialogueID,\n      role: 'assistant',\n      content: aiReply,\n      timestamp: new Date(Date.now() + 1000).toISOString()\n    },\n    response: {\n      success: true,\n      dialogueID: dialogueID,\n      messageID: messageID_ai,\n      aiReply: aiReply,\n      extractedTags: extractedTags,\n      title: title\n    }\n  }\n};"
+      },
+      "id": "d4e5f6a7-b8c9-0123-4567-890123defghi",
+      "name": "ProcessMessage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4032,
+        6608
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.isNewDialogue}}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true"
+                    },
+                    "id": "condition-new"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "新对话"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "e5f6a7b8-c9d0-1234-5678-901234efghij",
+      "name": "判断是否新对话",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        4272,
+        6608
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {json: $input.item.json.response};"
+      },
+      "id": "f6a7b8c9-d0e1-2345-6789-012345fghijk",
+      "name": "格式化响应",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4752,
+        6624
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json.data;\nconst tags = data.tags || ['外观','内饰'];\nconst vehicles = data.vehicles || [{name:'极氪009'},{name:'小鹏X9'},{name:'腾势D9'}];\nconst reportID = 'report_' + Date.now();\nconst html = '<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>报告</title><style>body{font-family:sans-serif;padding:40px}table{width:100%;border-collapse:collapse}th,td{padding:15px;border:1px solid #ddd}button{position:fixed;top:20px;right:20px;padding:10px 20px;background:#667eea;color:#fff;border:none;border-radius:8px;cursor:pointer}@media print{button{display:none}}</style></head><body><button onclick=\"window.print()\">打印PDF</button><h1>车型对比报告</h1><table><thead><tr><th>维度</th>'+vehicles.map(v=>'<th>'+v.name+'</th>').join('')+'</tr></thead><tbody>'+tags.map(t=>'<tr><td>'+t+'</td>'+vehicles.map(()=>'<td>优秀</td>').join('')+'</tr>').join('')+'</tbody></table><p style=\"margin-top:30px;text-align:center\">报告ID:'+reportID+'</p></body></html>';\nreturn {json: {success: true, reportID: reportID, htmlContent: html, createTime: new Date().toISOString()}};"
+      },
+      "id": "a7b8c9d0-e1f2-3456-7890-123456ghijkl",
+      "name": "GenerateReport",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4032,
+        6816
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json.data;\nconst userID = data.userID || 'testCode';\n\nconst dialogues = [\n  {\n    dialogueID: 'dlg_001',\n    title: '车型外观对比',\n    tags: ['外观', '设计'],\n    createTime: '2024-11-01 10:00',\n    lastMessage: '好的，我将重点关注外观、设计这些方面。'\n  },\n  {\n    dialogueID: 'dlg_002',\n    title: '续航性能分析',\n    tags: ['续航', '性能'],\n    createTime: '2024-11-01 14:30',\n    lastMessage: '根据您的需求，我建议关注这几款车型...'\n  }\n];\n\nreturn {\n  json: {\n    success: true,\n    dialogues: dialogues,\n    total: dialogues.length\n  }\n};"
+      },
+      "id": "b8c9d0e1-f2a3-4567-8901-234567hijklm",
+      "name": "GetDialogueList",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4032,
+        7008
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json.data;\nconst dialogueID = data.dialogueID;\n\nconst messages = [\n  {\n    role: 'user',\n    content: '请帮我分析问界M7的外饰',\n    timestamp: '2024-11-01 10:00:00'\n  },\n  {\n    role: 'assistant',\n    content: '我理解您关注车辆的外观设计。',\n    timestamp: '2024-11-01 10:00:05'\n  }\n];\n\nreturn {\n  json: {\n    success: true,\n    dialogueID: dialogueID,\n    title: '车型外观对比',\n    messages: messages\n  }\n};"
+      },
+      "id": "d0e1f2a3-b4c5-6789-0123-456789jklmno",
+      "name": "GetDialogueDetail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4032,
+        7200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "e0f1a2b3-c4d5-6789-0123-456789klmnop",
+      "name": "统一响应",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        4992,
+        6816
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook入口": {
+      "main": [
+        [
+          {
+            "node": "Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "ProcessMessage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GenerateReport",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetDialogueList",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetDialogueDetail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ProcessMessage": {
+      "main": [
+        [
+          {
+            "node": "判断是否新对话",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "判断是否新对话": {
+      "main": [
+        [],
+        [
+          {
+            "node": "格式化响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "格式化响应": {
+      "main": [
+        [
+          {
+            "node": "统一响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GenerateReport": {
+      "main": [
+        [
+          {
+            "node": "统一响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetDialogueList": {
+      "main": [
+        [
+          {
+            "node": "统一响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetDialogueDetail": {
+      "main": [
+        [
+          {
+            "node": "统一响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5cb72472896fce0666bc03ef84936c4f09ec11e6b4f95f9aebe3d538947c7935"
+  }
+}
+

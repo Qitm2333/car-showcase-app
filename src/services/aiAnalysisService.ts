@@ -3,6 +3,8 @@
  * 基于Demo实现：N8ND4/NEW02/ai-chat-demo.html
  */
 
+import { API_ENDPOINTS } from '@/config/api';
+
 // ========== 接口定义 ==========
 
 export interface AIMessage {
@@ -98,8 +100,8 @@ function getAIAnalysisEndpoint(): string {
   if (savedEndpoint) {
     return savedEndpoint;
   }
-  // 默认值（可以从WebhookDebugger配置）
-  return 'https://lynn-cafa-system.app.n8n.cloud/webhook/ai-analysis';
+  // 使用统一的API配置（已包含代理）
+  return API_ENDPOINTS.AI_ANALYSIS;
 }
 
 // 保存AI分析端点

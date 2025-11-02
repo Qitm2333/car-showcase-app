@@ -5,6 +5,7 @@ import { VisitHistoryProvider } from "./contexts/VisitHistoryContext";
 import { FolderCacheProvider } from "./contexts/FolderCacheContext";
 import { AIAnalysisProvider } from "./contexts/AIAnalysisContext";
 import { DebugProvider, useDebug } from "./contexts/DebugContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import CarShowcaseMain from "./pages/CarShowcaseMain";
 import CarShowcaseDetail from "./pages/CarShowcaseDetail";
@@ -21,14 +22,59 @@ function AppContent() {
     <>
       <Routes>
         <Route index element={<Navigate to="/login" replace />} />
+        {/* 🔓 登录页 - 公开访问 */}
         <Route path="login" element={<Login />} />
-        <Route path="car-showcase" element={<CarShowcaseMain />} />
-        <Route path="car-showcase/:id" element={<CarShowcaseDetail />} />
-        <Route path="favorites" element={<FavoritesMain />} />
-        <Route path="favorites/:id" element={<FavoritesDetail />} />
-        <Route path="ai-analysis" element={<AIAnalysis />} />
+        
+        {/* 🔒 以下所有路由都需要登录后才能访问 */}
+        <Route 
+          path="car-showcase" 
+          element={
+            <ProtectedRoute>
+              <CarShowcaseMain />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="car-showcase/:id" 
+          element={
+            <ProtectedRoute>
+              <CarShowcaseDetail />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="favorites" 
+          element={
+            <ProtectedRoute>
+              <FavoritesMain />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="favorites/:id" 
+          element={
+            <ProtectedRoute>
+              <FavoritesDetail />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="ai-analysis" 
+          element={
+            <ProtectedRoute>
+              <AIAnalysis />
+            </ProtectedRoute>
+          } 
+        />
         {/* 🔍 搜索结果页面路由 */}
-        <Route path="search" element={<SearchResults />} />
+        <Route 
+          path="search" 
+          element={
+            <ProtectedRoute>
+              <SearchResults />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
       
       {/* 🛠️ Webhook 调试器 - 连续点击3次 Quality logo 才显示 */}

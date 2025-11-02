@@ -34,7 +34,7 @@ const DEFAULT_ENDPOINTS = {
   CAR_DETAIL: 'https://lynn-cafa-system.app.n8n.cloud/webhook-test/car-detail-complete',
   
   // ⭐ 收藏夹管理（统一入口）
-  USER_FAVORITE: 'https://your-n8n-url/webhook/user-favorite',
+  USER_FAVORITE: 'https://lynn-cafa-system.app.n8n.cloud/webhook/user-favorite',
   
   // 🤖 智能整理
   SMART_ORGANIZE: 'https://lynn-cafa-system.app.n8n.cloud/webhook/smart-organize-to-folder',

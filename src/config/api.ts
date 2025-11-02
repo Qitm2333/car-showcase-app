@@ -10,7 +10,7 @@ const USE_PROXY = true; // 设置为 true 使用代理
 const PROXY_BASE_URL = '/api/proxy';
 
 // N8N后端基础URL（直连，仅在不使用代理时使用）
-const N8N_BASE_URL = 'https://lynn-cafa-system.app.n8n.cloud/webhook-test';
+const N8N_BASE_URL = 'https://lynn-cafa-system.app.n8n.cloud';
 
 // 构建代理URL的辅助函数
 function buildProxyUrl(path: string): string {
@@ -38,13 +38,13 @@ function loadWebhookConfig() {
 // 默认配置
 const DEFAULT_ENDPOINTS = {
   // 🔐 用户认证
-  LOGIN: buildProxyUrl('/webhook-test/api/login'),
+  LOGIN: buildProxyUrl('/webhook/api/login'),
   // 🚗 车型筛选
-  CAR_FILTER: buildProxyUrl('/webhook-test/car-image-filter'),
+  CAR_FILTER: buildProxyUrl('/webhook/car-image-filter'),
   // 🔍 车型直接搜索
-  CAR_SEARCH: buildProxyUrl('/webhook-test/get-all-car-images'),
+  CAR_SEARCH: buildProxyUrl('/webhook/get-all-car-images'),
   // 🚗 车辆详情页（完整详情 + AI分析 + 相关车型）
-  CAR_DETAIL: buildProxyUrl('/webhook-test/car-detail-complete'),
+  CAR_DETAIL: buildProxyUrl('/webhook/car-detail-complete'),
   
   // ⭐ 收藏夹管理（统一入口）
   USER_FAVORITE: buildProxyUrl('/webhook/user-favorite'),

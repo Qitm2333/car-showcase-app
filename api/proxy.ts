@@ -49,7 +49,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: req.method !== 'GET' && req.body ? JSON.stringify(req.body) : undefined,
     });
 
-    const data = await response.json();
+    // 读取响应文本
+    const text = await response.text();
+    
+    // 如果返回404，记录详细信息
+    if (response.status === 404) {
+      console.error('[Proxy 404]', {
+        targetUrl,
+        method: req.method,
+        responseText: text
+      });
+    }
+
+    // 尝试解析JSON
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      data = { success: false, error: text };
+    }
 
     // 返回响应
     res.status(response.status).json(data);

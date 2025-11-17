@@ -15,6 +15,7 @@ import imgAi041 from "figma:asset/46003650cde3b949971119d949fc7063f28bc448.png";
 import imgAi042 from "figma:asset/8e8053a6dbca7a6848f369ad65db2225e6e22d34.png";
 import imgSuv1 from "figma:asset/aaef27828b208eb34705cf8627140f4cb4a529bf.png";
 import imgIntersect from "figma:asset/e2cc2b7cf74e7714fdd94354b7cd1ccc784092f6.png";
+import logoImage from "@/assets/logo.png";
 
 // 背景组件
 function BackgroundComponent() {
@@ -100,6 +101,18 @@ function GroupLeft() {
           </linearGradient>
         </defs>
       </svg>
+    </div>
+  );
+}
+
+function Group() {
+  return (
+    <div className="absolute inset-[4.12%_76.19%_91.76%_6.96%]">
+      <img 
+        src={logoImage} 
+        alt="Logo" 
+        className="block size-full object-contain"
+      />
     </div>
   );
 }

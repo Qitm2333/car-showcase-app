@@ -4,6 +4,7 @@ import svgPaths from "../imports/login/svg-umkjzh2tjw";
 import { useUser } from "@/contexts/UserContext";
 import { API_ENDPOINTS } from "@/config/api";
 import FrogGame from "@/components/FrogGame";
+import logoImage from "@/assets/logo.png";
 
 function LeftBackground() {
   return (
@@ -94,16 +95,19 @@ function Logo({ onClick }: { onClick: () => void }) {
         
         .logo-animated:hover {
           transform: scale(1.1);
-          filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.4));
+        }
+        
+        .logo-animated:hover img {
+          filter: brightness(0) invert(1) drop-shadow(0 4px 12px rgba(255, 255, 255, 0.6));
         }
       `}</style>
       <div className="logo-animated transition-all duration-200">
-        <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 83 83">
-          <g id="Group 19">
-            <circle cx="71.2717" cy="71.2719" fill="white" id="Ellipse 35" r="11.7283" />
-            <path d={svgPaths.p250c0700} fill="white" id="Subtract" />
-          </g>
-        </svg>
+        <img 
+          src={logoImage} 
+          alt="Logo" 
+          className="block size-full object-contain"
+          style={{ filter: 'brightness(0) invert(1)' }}
+        />
       </div>
     </div>
   );

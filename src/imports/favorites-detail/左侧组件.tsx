@@ -6,6 +6,7 @@ import imgAi041 from "figma:asset/46003650cde3b949971119d949fc7063f28bc448.png";
 import imgSuv1 from "figma:asset/aaef27828b208eb34705cf8627140f4cb4a529bf.png";
 import imgIntersect from "figma:asset/e2cc2b7cf74e7714fdd94354b7cd1ccc784092f6.png";
 import { useDebug } from "@/contexts/DebugContext";
+import logoImage from "@/assets/logo.png";
 
 // ⭐ 已删除：Frame 函数（笔记本图标）
 
@@ -24,28 +25,11 @@ function Group1() {
   
   return (
     <div className="absolute inset-[4.12%_76.19%_91.76%_6.96%] cursor-pointer" onClick={handleLogoClick}>
-      <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 46 46">
-        <g id="Group 19">
-          <g id="Ellipse 35">
-            <circle cx="39.4992" cy="39.5003" fill="url(#paint0_linear_1_1101)" r="6.5" />
-            <circle cx="39.4992" cy="39.5003" fill="var(--fill-1, #999AFF)" r="6.5" />
-          </g>
-          <g id="Subtract">
-            <path d={svgPaths.p1eb60c40} fill="url(#paint1_linear_1_1101)" />
-            <path d={svgPaths.p1eb60c40} fill="var(--fill-1, #6062EF)" />
-          </g>
-        </g>
-        <defs>
-          <linearGradient gradientUnits="userSpaceOnUse" id="paint0_linear_1_1101" x1="45.9992" x2="30.4992" y1="43.0003" y2="34.0003">
-            <stop stopColor="#6062EF" />
-            <stop offset="1" stopColor="white" />
-          </linearGradient>
-          <linearGradient gradientUnits="userSpaceOnUse" id="paint1_linear_1_1101" x1="35.9992" x2="10.9997" y1="3.49992" y2="43.499">
-            <stop stopColor="#6062EF" />
-            <stop offset="1" stopColor="#ADAEFC" />
-          </linearGradient>
-        </defs>
-      </svg>
+      <img 
+        src={logoImage} 
+        alt="Logo" 
+        className="block size-full object-contain"
+      />
     </div>
   );
 }
